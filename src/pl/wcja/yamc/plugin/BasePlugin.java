@@ -4,7 +4,7 @@ import pl.wcja.yamc.frame.IMainFrame;
 
 /**
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:ketonal80@gmail.com">user</a>, wcja.pl
  *
  */
 public class BasePlugin {
@@ -14,6 +14,5 @@ public class BasePlugin {
 	public BasePlugin(IMainFrame mf) {
 		this.mf = mf;
 	}
-	
 	
 }
