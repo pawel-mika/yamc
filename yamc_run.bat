@@ -1,1 +1,1 @@
-java -cp .;./yamc.jar;./lib/* pl.wcja.yamc.frame.YAMCMain
+java -cp .;./yamc.jar;./lib/* pl.wcja.frame.YAMCMain
