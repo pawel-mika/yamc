@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." default="build" name="yamc">
+	<property environment="env" />
+	<property name="ECLIPSE_HOME" value="../../Dev/eclipse-SDK-3.7" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.6" />
+	<property name="source" value="1.6" />
+	<property name="output" value="dist" />
+
+	<path id="yamc.classpath">
+		<pathelement location="bin" />
+		<pathelement location="lib/jl1.0.1.jar" />
+		<pathelement location="lib/mp3spi1.9.4.jar" />
+		<pathelement location="lib/tritonus_share.jar" />
+		<pathelement location="lib/jtransforms-2.4.jar" />
+		<pathelement location="lib/jtransforms-2.4-doc.zip" />
+	</path>
+
+	<target name="init">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="src">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<echo>Creating output directory structure</echo>
+		<mkdir dir="${output}" />
+		<mkdir dir="${output}/lib" />
+	</target>
+
+	<target name="clean">
+		<delete dir="bin" />
+		<delete dir="${output}" />
+		<delete dir="${output}/lib" />
+	</target>
+
+	<target name="dist" depends="build" description="Creates a jar file in output directory and copies needed libs">
+		<jar destfile="${output}/yamc.jar">
+			<fileset dir="bin" />
+		</jar>
+		<echo>Copying libs...</echo>
+		<copy todir="${output}/lib">
+			<fileset dir="lib" id="dist_lib" includes="**/*.jar" />
+		</copy>
+		<echo>Copying yamc_run.bat</echo>
+		<copy todir="${output}">
+			<fileset file="yamc_run.bat" />
+		</copy>
+
+	</target>
+
+	<target depends="clean" name="cleanall" />
+
+	<target depends="build-subprojects,build-project" name="build" />
+
+	<target name="build-subprojects" />
+
+	<target depends="init" name="build-project">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+			<src path="src" />
+			<classpath refid="yamc.classpath" />
+		</javac>
+	</target>
+
+	<target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects" />
+
+	<target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+		<copy todir="${ant.library.dir}">
+			<fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
+		</copy>
+		<unzip dest="${ant.library.dir}">
+			<patternset includes="jdtCompilerAdapter.jar" />
+			<fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
+		</unzip>
+	</target>
+
+	<target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+		<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+		<antcall target="build" />
+	</target>
+
+	<target name="yamc">
+		<java classname="pl.wcja.frame.YAMCMain" failonerror="true" fork="yes">
+			<classpath refid="yamc.classpath" />
+		</java>
+	</target>
+</project>
