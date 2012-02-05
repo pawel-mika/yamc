@@ -33,6 +33,7 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	private double barFrequencyWidth = 0;
 	private double fft0dbValue = 0;
 	private DoubleFFT_1D fft = null;
+	private DoubleFFT_1D channelFft = null;
 	private Thread analyzerThread = null;
 	private AnalyzerRunnable analyzerRunnable = null;
 	private AudioFormat audioFormat = null;
@@ -94,6 +95,14 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 			}
 		}
 	}
+	
+	private void filePerChannelPowerCalculated(SpectrumAnalyzerEvent e) {
+		synchronized (listeners) {
+			for(SpectrumAnalyzerListener l : listeners) {
+				l.perChannelPowerCaclulated(e);
+			}
+		}
+	}
 
 	@Override
 	public void playbackStatusChanged(PlaybackEvent e) {
@@ -106,6 +115,7 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	
 	private void setupAnalyzer() {
 		fft = new DoubleFFT_1D(fftSize);
+		channelFft = new DoubleFFT_1D(audioFormat.getChannels());
 		//calculate max
 		double[] tmp = new double[fftSize];
 		for(int i = 0; i < tmp.length; i++) {

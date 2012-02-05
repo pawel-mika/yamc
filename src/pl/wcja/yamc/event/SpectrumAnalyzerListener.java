@@ -7,6 +7,8 @@ package pl.wcja.yamc.event;
  *
  */
 public interface SpectrumAnalyzerListener {
+	
+	void perChannelPowerCaclulated(SpectrumAnalyzerEvent e);
 
 	void spectrumCalculated(SpectrumAnalyzerEvent e);
 	
