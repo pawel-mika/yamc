@@ -121,17 +121,27 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 		double dNumber = 0;
 		int total = e.getChannelFFTs().length;
 		
+		//try no.1
+//		for(int i = 0; i < total; i++) {
+//			for(int j = 0; j < e.getChannelFFTs()[i].length; j+=2) {
+//				dNumber = (e.getChannelFFTs()[i][j] * e.getChannelFFTs()[i][j]) 
+//						+ (e.getChannelFFTs()[i][j + 1] * e.getChannelFFTs()[i][j + 1]);
+//				dNumber = (20 * Math.log10(dNumber)) / fftSize;
+//				fftChannelPower[i] = dNumber > fftChannelPower[i] ? dNumber : fftChannelPower[i];
+//			}
+//		}
+
+		//try no.2
 		for(int i = 0; i < total; i++) {
 			for(int j = 0; j < e.getChannelFFTs()[i].length; j+=2) {
-				dNumber = (e.getChannelFFTs()[i][j] * e.getChannelFFTs()[i][j]) 
-						+ (e.getChannelFFTs()[i][j + 1] * e.getChannelFFTs()[i][j + 1]);
-				dNumber = (20 * Math.log10(dNumber)) / fftSize;
-				fftChannelPower[i] = dNumber > fftChannelPower[i] ? dNumber : fftChannelPower[i];
+				dNumber = (e.getChannelFFTs()[i][j] * e.getChannelFFTs()[i][j]) + (e.getChannelFFTs()[i][j + 1] * e.getChannelFFTs()[i][j + 1]);
+				fftChannelPower[i] += dNumber;
 			}
 		}
 		for(int i = 0; i < fftChannelPower.length; i++) {
-//			fftChannelPower[i] /= fftSize;
+			fftChannelPower[i] = (20 * Math.log10(fftChannelPower[i])) / fftSize;
 		}
+		
 		repaint();
 	}
 

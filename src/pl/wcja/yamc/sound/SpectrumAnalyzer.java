@@ -95,14 +95,6 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 			}
 		}
 	}
-	
-	private void filePerChannelPowerCalculated(SpectrumAnalyzerEvent e) {
-		synchronized (listeners) {
-			for(SpectrumAnalyzerListener l : listeners) {
-				l.perChannelPowerCaclulated(e);
-			}
-		}
-	}
 
 	@Override
 	public void playbackStatusChanged(PlaybackEvent e) {
