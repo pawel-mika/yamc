@@ -14,6 +14,7 @@ import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.utils.SoundUtils;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
+import edu.emory.mathcs.utils.IOUtils;
 
 /**
  * Collects mixed sound data until mixedBuffer lenght == fftSize and then
@@ -33,7 +34,6 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	private double barFrequencyWidth = 0;
 	private double fft0dbValue = 0;
 	private DoubleFFT_1D fft = null;
-	private DoubleFFT_1D channelFft = null;
 	private Thread analyzerThread = null;
 	private AnalyzerRunnable analyzerRunnable = null;
 	private AudioFormat audioFormat = null;
@@ -107,15 +107,14 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	
 	private void setupAnalyzer() {
 		fft = new DoubleFFT_1D(fftSize);
-		channelFft = new DoubleFFT_1D(audioFormat.getChannels());
 		//calculate max
 		double[] tmp = new double[fftSize];
 		for(int i = 0; i < tmp.length; i++) {
-			tmp[i] = Math.pow(2, audioFormat.getSampleSizeInBits());
+			tmp[i] = Math.pow(2, audioFormat.getSampleSizeInBits()) * (i % 2 == 0 ? 1 : -1);
 		}
 		fft.realForward(tmp);
 		fft0dbValue = (tmp[0] * tmp[0] + tmp[1] * tmp[1]);
-		fft0dbValue = (20 * Math.log10(fft0dbValue))  / tmp.length;
+		fft0dbValue = (10 * Math.log10(fft0dbValue))  / tmp.length;
 	}
 	
 	private void startAnalyzer() {

@@ -134,12 +134,13 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 		//try no.2
 		for(int i = 0; i < total; i++) {
 			for(int j = 0; j < e.getChannelFFTs()[i].length; j+=2) {
-				dNumber = (e.getChannelFFTs()[i][j] * e.getChannelFFTs()[i][j]) + (e.getChannelFFTs()[i][j + 1] * e.getChannelFFTs()[i][j + 1]);
+				dNumber = Math.pow(e.getChannelFFTs()[i][j], 2) + Math.pow(e.getChannelFFTs()[i][j + 1], 2);
 				fftChannelPower[i] += dNumber;
 			}
 		}
 		for(int i = 0; i < fftChannelPower.length; i++) {
-			fftChannelPower[i] = (20 * Math.log10(fftChannelPower[i])) / fftSize;
+			fftChannelPower[i] = (10 * Math.log10(fftChannelPower[i])) / fftSize;
+//			fftChannelPower[i] = ((fftChannelPower[i])) / fftSize;
 		}
 		
 		repaint();

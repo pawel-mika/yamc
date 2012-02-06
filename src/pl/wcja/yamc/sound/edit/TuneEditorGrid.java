@@ -2,7 +2,6 @@ package pl.wcja.yamc.sound.edit;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -25,29 +24,22 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Collection;
-import java.util.Currency;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
-
-import org.omg.CORBA.Environment;
 
 import pl.wcja.yamc.frame.Configurable;
 import pl.wcja.yamc.frame.IMainFrame;
@@ -59,13 +51,12 @@ import pl.wcja.yamc.sound.Tune;
 import pl.wcja.yamc.sound.file.DecoderManager;
 import pl.wcja.yamc.utils.DialogUtils;
 import pl.wcja.yamc.utils.RandomGenerator;
-import sun.font.FontDesignMetrics;
 
 /**
  * <p>
  * Panel holding the tune and allowing editing it
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
  *
  */
 public class TuneEditorGrid extends JComponent 
@@ -112,7 +103,7 @@ public class TuneEditorGrid extends JComponent
 	
 	/**
 	 * Snap mode for moving trackItems
-	 * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+	 * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
 	 *
 	 */
 	public enum SnapMode {
@@ -139,7 +130,7 @@ public class TuneEditorGrid extends JComponent
 	
 	/**
 	 * Enum for displaying grids
-	 * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+	 * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
 	 *
 	 */
 	public enum GridDisplay {
@@ -511,23 +502,9 @@ public class TuneEditorGrid extends JComponent
 			//fill background
 			g.setColor(colorBackground);
 			g.fillRect(0, 0, getWidth(), getHeight());
-			//paint hotizontal track lines
-			paintTrackLines(g);
-//			switch(gridDisplay) {
-//				case NONE:
-//					break;
-//				case SECONDS:
-//					paintTimeGrid(g);
-//					break;
-//				case BEATS:
-//					paintBeatGrid(g);
-//					break;
-//				case BOTH:
-//					paintTimeGrid(g);
-//					paintBeatGrid(g);
-//					break;
-//			}
+			//paint the grid - vertical 'beats' and horizontal tracks lines
 			paintBeatGrid(g);
+			paintTrackLines(g);
 		}
 		//paint children...
 		super.paint(g);

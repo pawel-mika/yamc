@@ -105,12 +105,11 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		spectrumAnalyzer = new SpectrumAnalyzer(this);
 		
 		ChannelPowerMeter cp = new ChannelPowerMeter(this);
-		cp.setPreferredSize(new Dimension(192,32));
+		cp.setPreferredSize(new Dimension(256,32));
 		cp.setBackground(Color.white);
 		mfToolBar.add(cp);
 		
-		mfUndoManager = new MFUndoManager(this);
-		
+		mfUndoManager = new MFUndoManager(this);		
 	}
 	
 	private void initTestTune() {

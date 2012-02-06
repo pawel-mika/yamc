@@ -65,7 +65,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	}
 
 	private void initialize() {
-		setSize(128, 64);
+		setSize(256, 128);
 		setBackground(Color.WHITE);
 //		setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
 		
@@ -128,7 +128,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
- 			toPaint[c] = (20 * Math.log10(toPaint[c])) / fftSize;
+ 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
 			toPaint[c] = (toPaint[c] / fft0dbValue) * getHeight();
 			c++;
 		}
@@ -139,12 +139,20 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		}
 				
 		int fftIndex = 0, x = 0, y = 0;
+		boolean lineMode = (barWidth - 1) <= 0 ? true : false;
 		for(int i = 0; i < toPaint.length; i ++) {
 			y  = getHeight() - (int)toPaint[fftIndex];
-			g.setColor(Color.BLUE);
-			g.fillRect(x, y, barWidth - 1, getHeight());
-			g.setColor(Color.red);
-			g.drawLine(x, y, x + barWidth - 2, y);
+			if(lineMode) {
+				g.setColor(Color.BLUE);
+				g.drawLine(x, y, x, getHeight());
+				g.setColor(Color.red);
+				g.drawLine(x, y, x, y);
+			} else {
+				g.setColor(Color.BLUE);				
+				g.fillRect(x, y, barWidth - 1, getHeight());
+				g.setColor(Color.red);
+				g.drawLine(x, y, x + barWidth - 2, y);
+			}
 			fftIndex++;
 			x+=barWidth;
 		}	
@@ -155,7 +163,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
-			toPaint[c] = (20 * Math.log10(toPaint[c])) / fftSize;
+			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
 			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
 			
 			c++;
@@ -204,7 +212,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
-			toPaint[c] = (20 * Math.log10(toPaint[c])) / fftSize;
+			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
 			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
 			c++;
 		}
@@ -256,7 +264,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		
 	@Override
 	public Dimension getMinimumSize() {
-		return new Dimension(fftSize, 32);
+		return new Dimension(fftSize == 0 ? 256 : fftSize, 64);
 	}
 
 	@Override
