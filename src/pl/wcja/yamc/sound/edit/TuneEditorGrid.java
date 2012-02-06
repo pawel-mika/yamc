@@ -321,6 +321,7 @@ public class TuneEditorGrid extends JComponent
 				}
 			}
 			recalculateRatios();
+			rearrangeTracks();
 			mf.setTuneTitle(tune.getTuneName());
 			repaint();
 		}

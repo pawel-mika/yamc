@@ -62,6 +62,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		super(mf);
 		initialize();
 		setPreferredSize(getMinimumSize());
+		this.setToolTipText(String.format("Band width: %sHz",mf.getSpectrumAnalyzer().getBandWidth()));
 	}
 
 	private void initialize() {
@@ -129,7 +130,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
  			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-			toPaint[c] = (toPaint[c] / fft0dbValue) * getHeight();
+			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
 			c++;
 		}
 		
@@ -164,8 +165,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
-			
+//			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
+			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
 			c++;
 		}
 		
@@ -207,13 +208,15 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		}
 	}
 	
+	
 	private void paintLog2(Graphics g) {
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
+//			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
+			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
 			c++;
 		}
 		

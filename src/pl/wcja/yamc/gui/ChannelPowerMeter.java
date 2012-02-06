@@ -103,7 +103,8 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 			int barHeight = getHeight() / fftChannelPower.length;
 			int barWidth = 0, y = 0;
 			for(int i = 0; i < fftChannelPower.length; i++) {
-				barWidth = (int)((fftChannelPower[i] / (fft0dbValue)) * getWidth());
+//				barWidth = (int)((fftChannelPower[i] / (fft0dbValue)) * getWidth());
+				barWidth = (int)((fftChannelPower[i] * getWidth()) / fft0dbValue);
 				g.setColor(Color.BLUE);
 				g.fillRect(0, y, barWidth, barHeight - 1);
 				g.setColor(Color.red);

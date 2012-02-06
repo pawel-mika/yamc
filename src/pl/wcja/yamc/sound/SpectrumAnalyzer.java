@@ -138,7 +138,7 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 		
 	}
 
-	private double getBandWidth() {
+	public double getBandWidth() {
 //		return (audioFormat.getSampleRate() / 2) / fftSize;
 		return audioFormat.getSampleRate() / fftSize;
 	}
