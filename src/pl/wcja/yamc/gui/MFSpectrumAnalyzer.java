@@ -4,7 +4,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
@@ -23,12 +27,14 @@ import pl.wcja.yamc.frame.IMainFrame;
 public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListener {
 
 	private int fftSize = 0;
-	private double[] fftBuffer = null;
+	private double[][] fftPerChannelBuffer = null;
+	private double[] fftSumBuffer = null;
 	private double fft0dbValue = 0;
 	private double fftDbMargin = 6;	//6db margin?
 	private double bandWidth = 0;
 	private AudioFormat audioFormat = mf.getMixer().getMixAudioFormat();
-	
+	private JPopupMenu popupMenu;
+
 	public enum ViewMode {
 		LINEAR("Linear", 0),
 		LOGARITHMIC("Logarithmic", 1),
@@ -49,10 +55,30 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		public int getValue() {
 			return value;
 		}
-	}
-	
+	}	
 	private ViewMode fftViewMode = ViewMode.LINEAR;
-	private JPopupMenu popupMenu;
+	
+	public enum DrawType {
+		SUM("Sum of channels", 0),
+		PER_CHANNEL("Channels separately", 1);
+		
+		private String name = "";
+		private int value = 0;
+		
+		private DrawType(String name, int value) {
+			this.name = name;
+			this.value = value;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public int getValue() {
+			return value;
+		}
+	}
+	private DrawType drawType = DrawType.SUM;
 	
 	/**
 	 * 
@@ -104,7 +130,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		g.setColor(getBackground());
 		g.fillRect(0, 0, getWidth(), getHeight());
 		
-		if(fftBuffer == null) {
+		if(fftSumBuffer == null) {
 			return;
 		}
 		
@@ -125,45 +151,16 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	}
 	
 	private void paintLinear(Graphics g) {
-		double[] toPaint = new double[fftSize];
-		int c = 0;
-		for(int i = 0; i < toPaint.length; i += 2) {
-			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
- 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
-			c++;
+		if(drawType == DrawType.SUM) {
+			paintFullBandLinearSum(g);
 		}
-		
-		int barWidth = getWidth() / (fftSize / 2);
-		if(barWidth <= 0) {
-			barWidth = 1;
-		}
-				
-		int fftIndex = 0, x = 0, y = 0;
-		boolean lineMode = (barWidth - 1) <= 0 ? true : false;
-		for(int i = 0; i < toPaint.length; i ++) {
-			y  = getHeight() - (int)toPaint[fftIndex];
-			if(lineMode) {
-				g.setColor(Color.BLUE);
-				g.drawLine(x, y, x, getHeight());
-				g.setColor(Color.red);
-				g.drawLine(x, y, x, y);
-			} else {
-				g.setColor(Color.BLUE);				
-				g.fillRect(x, y, barWidth - 1, getHeight());
-				g.setColor(Color.red);
-				g.drawLine(x, y, x + barWidth - 2, y);
-			}
-			fftIndex++;
-			x+=barWidth;
-		}	
 	}
 	
 	private void paintLog(Graphics g) {
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
-			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
+			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
 //			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
 			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
@@ -213,7 +210,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
-			toPaint[c] = (fftBuffer[i] * fftBuffer[i]) + (fftBuffer[i + 1] * fftBuffer[i + 1]);
+			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
 //			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
 			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
@@ -274,15 +271,54 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	public void spectrumCalculated(final SpectrumAnalyzerEvent e) {
 		fft0dbValue = e.getFft0dbValue();
 		fftSize = e.getChannelFFTs()[0].length;
-		double[] sum = new double[e.getChannelFFTs()[0].length];
-		int total = e.getChannelFFTs().length;
-		for(int i = 0; i < total; i++) {
-			for(int j = 0; j < e.getChannelFFTs()[i].length; j++) {
-				sum[j] += (e.getChannelFFTs()[i][j] / total);
-			}
-		}
-		fftBuffer = sum;
+		fftPerChannelBuffer = e.getChannelFFTs();
 		bandWidth = e.getBarFrequencyWidth();
+		//calculate sum only if we really need it - save some time and CPU power;)
+		if(drawType == DrawType.SUM) {	
+			double[] sum = new double[e.getChannelFFTs()[0].length];
+			int total = e.getChannelFFTs().length;
+			for(int i = 0; i < total; i++) {
+				for(int j = 0; j < e.getChannelFFTs()[i].length; j++) {
+					sum[j] += (e.getChannelFFTs()[i][j] / total);
+				}
+			}
+			fftSumBuffer = sum;
+		}
 		repaint();		
+	}
+	
+	/**
+	 * Draws a transparent image of full spectrum analysis 
+	 * on a given graphics.
+	 * 
+	 * @param g2d
+	 */
+	private void paintFullBandLinearSum(Graphics g) {
+		Image img = new BufferedImage(fftSize / 2, getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)img.getGraphics();
+//		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		
+		double[] toPaint = new double[fftSize];
+		int c = 0;
+		for(int i = 0; i < toPaint.length; i += 2) {
+			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
+ 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
+			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
+			c++;
+		}
+		
+		int barWidth = 1;
+		int fftIndex = 0, x = 0, y = 0;
+		for(int i = 0; i < toPaint.length; i ++) {
+			y  = getHeight() - (int)toPaint[fftIndex];
+			g2d.setColor(Color.BLUE);
+			g2d.drawLine(x, y, x, getHeight());
+			g2d.setColor(Color.red);
+			g2d.drawLine(x, y, x, y);
+			fftIndex++;
+			x+=barWidth;
+		}		
+		g2d.dispose();
+		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_AREA_AVERAGING), 0, 0, null);
 	}
 }
