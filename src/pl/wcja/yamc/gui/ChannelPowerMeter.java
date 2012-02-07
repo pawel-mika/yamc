@@ -102,9 +102,11 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 		} else if(direction == Direction.HORIZONTAL) {
 			int barHeight = getHeight() / fftChannelPower.length;
 			int barWidth = 0, y = 0;
+			int zerodB = getWidth() - (int)(getWidth() * fft0dbValue);
 			for(int i = 0; i < fftChannelPower.length; i++) {
-//				barWidth = (int)((fftChannelPower[i] / (fft0dbValue)) * getWidth());
 				barWidth = (int)((fftChannelPower[i] * getWidth()) / fft0dbValue);
+				g.setColor(Color.GRAY);
+				g.drawLine(zerodB, y, zerodB, y + barHeight - 2);
 				g.setColor(Color.BLUE);
 				g.fillRect(0, y, barWidth, barHeight - 1);
 				g.setColor(Color.red);
@@ -141,9 +143,7 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 		}
 		for(int i = 0; i < fftChannelPower.length; i++) {
 			fftChannelPower[i] = (10 * Math.log10(fftChannelPower[i])) / fftSize;
-//			fftChannelPower[i] = ((fftChannelPower[i])) / fftSize;
 		}
-		
 		repaint();
 	}
 

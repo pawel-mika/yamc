@@ -136,7 +136,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		
 		//paint 0db line
 		String s0dB = "0dB";
-		int line0db = (int)(fft0dbValue  * getHeight()) / getHeight();
+		int line0db = (int)(fft0dbValue  * getHeight());
 		g.setColor(Color.gray);
 		g.drawLine(0, line0db, getWidth(), line0db);
 		g.drawString(s0dB, getWidth() - fm.stringWidth(s0dB), (int)(fm.getStringBounds(s0dB, g).getHeight()));
@@ -301,9 +301,10 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
-			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
+			toPaint[c] = fftSumBuffer[i] == 0 && fftSumBuffer[i + 1] == 0 ? 0 : (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
  			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
+//			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
+ 			toPaint[c] = (toPaint[c]  / fft0dbValue) * getHeight();
 			c++;
 		}
 		
