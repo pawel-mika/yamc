@@ -30,7 +30,7 @@ import com.sun.media.sound.WaveFileReader;
 /**
  * Track item panel to be viewed and operated in TuneEditorGrid
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:ketonal80@gmail.com">ketonal</a>, wcja.pl
  *
  */
 public class TrackItemPanel extends WaveEditorPanel implements DropTargetListener {
@@ -76,19 +76,19 @@ public class TrackItemPanel extends WaveEditorPanel implements DropTargetListene
 		return trackItem;
 	}
 	
-	/**
-	 * TODO - pobraæ 'przeskalowane' aby gra³ szaybciej/wolniej?
-	 * @return
-	 */
-	public byte[] getBytesScaled(double trackSecondStart, int framesCount) {
-		double ratio = trackItem.getLenght() / (visibleEnd - visibleStart);
-		if(ratio == 1) {
-			//pobieramy normalnie
-		} else {
-			 double endTime = trackSecondStart + sampleToSecond(framesCount);
-		}
-		//TODO chyba cos tu...
-	}
+//	/**
+//	 * TODO - pobraï¿½ 'przeskalowane' aby graï¿½ szaybciej/wolniej?
+//	 * @return
+//	 */
+//	public byte[] getBytesScaled(double trackSecondStart, int framesCount) {
+//		double ratio = trackItem.getLenght() / (visibleEnd - visibleStart);
+//		if(ratio == 1) {
+//			//pobieramy normalnie
+//		} else {
+//			 double endTime = trackSecondStart + sampleToSecond(framesCount);
+//		}
+//		//TODO chyba cos tu...
+//	}
 	
 	@Override
 	public void setWaveFile(File waveFile) throws UnsupportedAudioFileException, IOException {

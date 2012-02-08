@@ -387,7 +387,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		g.fillRect(0, 0, getWidth(), getHeight());
 		//childs + border etc
 		super.paint(g);
-		//wave i jego pierdó³ki
+		//wave i jego pierdï¿½ki
 		if(buffer != null && buffer.length > 0) {
 			recalculateSamplesPerPixel();
 			if(g instanceof Graphics2D) {
@@ -476,6 +476,9 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 	}
 	
+	//TODO: add a prerender of wave to a bitmap/png and then draw it properly on the panel
+	//instead of dynamic rendering
+	//Maybe use REAPEAKS? (http://www.reaper.fm/sdk/reapeaks.txt)
 	private void paintSampleAbs(Graphics g) {
 		lastWidth = getWidth();
 		lastHeight = getHeight();
