@@ -1,4 +1,4 @@
-package pl.wcja.yamc.sound;
+package pl.wcja.yamc.dsp;
 
 import java.util.LinkedList;
 
@@ -12,6 +12,7 @@ import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.event.SpectrumAnalyzerEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerListener;
 import pl.wcja.yamc.frame.IMainFrame;
+import pl.wcja.yamc.utils.Decibels;
 import pl.wcja.yamc.utils.SoundUtils;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
@@ -113,7 +114,8 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 		}
 		fft.realForward(tmp);
 		fft0dbValue = (tmp[0] * tmp[0] + tmp[1] * tmp[1]);
-		fft0dbValue = (10 * Math.log10(fft0dbValue))  / tmp.length;
+//		fft0dbValue = (10 * Math.log10(fft0dbValue))  / tmp.length;
+		fft0dbValue = Decibels.linearToDecibels(fft0dbValue) / tmp.length;
 	}
 	
 	private void startAnalyzer() {

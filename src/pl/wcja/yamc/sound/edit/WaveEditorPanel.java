@@ -26,6 +26,7 @@ import javax.swing.JComponent;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
+import pl.wcja.yamc.utils.SoundUtils;
 
 import com.sun.media.sound.WaveFileReader;
 
@@ -44,9 +45,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private static final long serialVersionUID = 366586339790323573L;
 	private boolean debug = false;
 	private boolean info = true;
-	
 	protected Reapeaks reapeaks = null;
-	
+	private int avgMagQuantizer = 8;
 	private File waveFile = null;
 	private WaveFileReader wfr = new WaveFileReader();
 	protected AudioFileFormat audioFileFormat = null;
@@ -305,6 +305,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	}
 	
 	/**
+<<<<<<< HEAD
 	 * Get a sample from reapeak mipmap
 	 * @param sampleNo
 	 * @return
@@ -322,24 +323,21 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	}
 	
 	/**
-	 * 
+	 * gets a normalized (0...1) sample magnitude from given sample
+	 * through the TODO!! normalize
 	 * @param sampleNo
 	 * @return
 	 */
-	private double[] getSampleAvgAbs(long sampleNo) {
+	private double[] getNormalizedSampleMag(long sampleNo) {
 		long sampleFrom = sampleNo;
 		long sampleTo = sampleFrom + (int)samplesPerPixel;
 		double[] avg = new double[channels];
-		for(long s = sampleFrom; s < sampleTo; s+=8) {
+		for(long s = sampleFrom; s < sampleTo; s+=avgMagQuantizer) {
 			double[] d = getSample(s);
 			for(int c = 0; c < channels; c++) {
-//				avg[c] += Math.abs(d[c]); //OK
-				avg[c] += d[c];
+				avg[c] += Math.abs(d[c]);// / samplesPerPixel; //OK
 			}
 		}
-//		for(int c = 0; c < channels; c++) {
-//			avg[c] /= 20 * Math.log10(avg[c]);
-//		}
 		return avg;
 	}
 	
@@ -436,6 +434,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 				if(w == 0) { w = 1; }
 				g.fillRect((int)x1, 0, w, getHeight());
 			}
+			//sample
+//			paintSampleMag(g);
 			paintSampleAbs(g);
 			//new way to paint sample 
 //			paintWaveform(g);
@@ -474,37 +474,35 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * 
 	 * @param g
 	 */
-	private void paintSample(Graphics g) {
+	private void paintSampleMag(Graphics g) {
 		lastWidth = getWidth();
 		lastHeight = getHeight();
-		int heightRatio = ((int)Math.pow(2, audioFileFormat.getFormat().getSampleSizeInBits()) / getHeight()) * audioFileFormat.getFormat().getChannels();
 		double channelHeight = (lastHeight / channels);
 		Rectangle b = getBounds();
 		//in case of this component bounds extends parent bounds we're
 		//going to draw only the visible region to speed up drawing!
 		Rectangle clipBounds = g.getClipBounds();
-//		int from = (b.getX() < 0) ? (int)Math.abs(b.getX()) : 0;
-//		int to = from != 0 ? Math.abs(from) : 0;
-//		to += (b.getWidth() - from) > getParent().getWidth() ? getParent().getWidth() - 1 : (b.getWidth() - from) - 1;
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth() - 1;
 		if(debug) {
 			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
 		}
 		for(int x = from; x < to; x++) {
-			double lts = pixelToSample(x);
-			double[] sample = getSample((long)lts);
-			double[] sampleNext = getSample((long)pixelToSample(x + 1));
+			double fromSample = pixelToSample(x);
+			double[] sampleMag = getNormalizedSampleMag((long)fromSample);
+			sampleMag = SoundUtils.normalize(sampleMag, audioFileFormat.getFormat());
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
 				g.setColor(colorGrid);
 				g.drawLine(x, (int)chnX, x, (int)chnX);
-				if(selection != null && lts >= selection.getSelectionStart() && lts <= selection.getSelectionEnd()) {
+				if(selection != null && fromSample >= selection.getSelectionStart() && fromSample <= selection.getSelectionEnd()) {
 					g.setColor(colorBackground);
 				} else {
 					g.setColor(colorForeground);
 				}
-				g.drawLine(x, (int)(chnX + sample[channel] / heightRatio), x + 1, (int)(chnX + sampleNext[channel] / heightRatio));
+				double value = sampleMag[channel] * (channelHeight / samplesPerPixel) *  avgMagQuantizer;
+				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
+				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
 			}
 		}
 	}
@@ -512,6 +510,10 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	//TODO: add a prerender of wave to a bitmap/png and then draw it properly on the panel
 	//instead of dynamic rendering
 	//Maybe use REAPEAKS? (http://www.reaper.fm/sdk/reapeaks.txt)
+	/**
+	 * 
+	 * @param g
+	 */
 	private void paintSampleAbs(Graphics g) {
 		lastWidth = getWidth();
 		lastHeight = getHeight();

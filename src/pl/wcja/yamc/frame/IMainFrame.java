@@ -2,11 +2,11 @@ package pl.wcja.yamc.frame;
 
 import javax.swing.JSplitPane;
 
+import pl.wcja.yamc.dsp.SpectrumAnalyzer;
 import pl.wcja.yamc.gui.MFMenuBar;
 import pl.wcja.yamc.gui.MFMixer;
 import pl.wcja.yamc.gui.MFStatusStrip;
 import pl.wcja.yamc.gui.MFToolBar;
-import pl.wcja.yamc.sound.SpectrumAnalyzer;
 import pl.wcja.yamc.sound.edit.TuneEditorGrid;
 import pl.wcja.yamc.sound.edit.WaveEditor;
 

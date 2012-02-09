@@ -78,6 +78,22 @@ public class SoundUtils {
 	}
 	
 	/**
+	 * Normalize the given data to -1.0 ... 1.0 values according the
+	 * given audio format
+	 * @param data
+	 * @param format
+	 * @return
+	 */
+	public static double[] normalize(double[] data, AudioFormat format) {
+		double[] out = new double[data.length];
+		int sampleMaxValue = (int)(Math.pow(2, format.getSampleSizeInBits() - 1)); //-1 because of data range from -1 to +1
+		for(int i = 0; i < data.length; i++) {
+			out[i] = data[i] / sampleMaxValue;
+		}
+		return out;
+	}
+	
+	/**
 	 * Convert audio data from byte array into double array
 	 * @param bytes
 	 * @param format

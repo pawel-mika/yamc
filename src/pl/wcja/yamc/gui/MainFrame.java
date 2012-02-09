@@ -19,9 +19,9 @@ import javax.swing.WindowConstants;
 
 import pl.wcja.yamc.config.BaseMenuBuilder;
 import pl.wcja.yamc.db.Database;
+import pl.wcja.yamc.dsp.SpectrumAnalyzer;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.MFUndoManager;
-import pl.wcja.yamc.sound.SpectrumAnalyzer;
 import pl.wcja.yamc.sound.Track;
 import pl.wcja.yamc.sound.TrackItem;
 import pl.wcja.yamc.sound.Tune;
