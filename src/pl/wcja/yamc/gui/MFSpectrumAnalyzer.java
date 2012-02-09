@@ -18,6 +18,7 @@ import javax.swing.JPopupMenu;
 import pl.wcja.yamc.event.SpectrumAnalyzerEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerListener;
 import pl.wcja.yamc.frame.IMainFrame;
+import pl.wcja.yamc.utils.Decibels;
 
 /**
  * 
@@ -161,8 +162,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
-			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-//			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
+			toPaint[c] = Decibels.linearToDecibels(toPaint[c]) / fftSize;
 			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
 			c++;
 		}
@@ -296,15 +296,13 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private void paintFullBandLinearSum(Graphics g) {
 		Image img = new BufferedImage(fftSize / 2, getHeight(), BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)img.getGraphics();
-//		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = fftSumBuffer[i] == 0 && fftSumBuffer[i + 1] == 0 ? 0 : (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
- 			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
-//			toPaint[c] = (toPaint[c]  * getHeight()) / fft0dbValue;
- 			toPaint[c] = (toPaint[c]  / fft0dbValue) * getHeight();
+			toPaint[c] = Decibels.linearToDecibels(toPaint[c]) / fftSize;
+ 			toPaint[c] = (toPaint[c] / fft0dbValue) * getHeight();
 			c++;
 		}
 		
