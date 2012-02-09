@@ -3,9 +3,6 @@ package pl.wcja.yamc.utils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.io.File;
@@ -16,12 +13,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import pl.wcja.yamc.frame.IMainFrame;
-import pl.wcja.yamc.gui.MFDialog;
 import pl.wcja.yamc.gui.MFOkCancelDialog;
-import pl.wcja.yamc.sound.TrackItem;
 import pl.wcja.yamc.sound.edit.TrackItemPanel;
-
-import com.sun.script.javascript.JSAdapter;
 
 /**
  * 

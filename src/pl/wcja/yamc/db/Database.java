@@ -7,12 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.MFObject;
-import sun.reflect.Reflection;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * 

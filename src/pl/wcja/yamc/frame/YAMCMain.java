@@ -19,10 +19,10 @@ public class YAMCMain {
 	 */
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
-
+			
 			private MainFrame mf = null;
 
-			public void run() {
+			public void run() {				
 				WindowsLookAndFeel wlaf = new WindowsLookAndFeel();
 				try{
 					UIManager.setLookAndFeel(wlaf);

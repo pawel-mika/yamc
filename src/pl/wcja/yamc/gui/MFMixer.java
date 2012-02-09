@@ -3,23 +3,15 @@ package pl.wcja.yamc.gui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
@@ -28,17 +20,15 @@ import javax.swing.JPanel;
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
-import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.event.PlaybackEvent.State;
+import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.ToolBarEntry;
 import pl.wcja.yamc.sound.MixerPanel;
 import pl.wcja.yamc.sound.Track;
 import pl.wcja.yamc.sound.TrackItem;
 import pl.wcja.yamc.sound.Tune;
-import pl.wcja.yamc.sound.edit.MarkerLocationChangedEvent;
 import pl.wcja.yamc.sound.edit.TrackItemPanel;
-import pl.wcja.yamc.sound.edit.WaveEditorPanelListener;
 import pl.wcja.yamc.utils.SoundUtils;
 
 /**
@@ -207,17 +197,17 @@ public class MFMixer extends MixerPanel implements ToolBarEntry {
 		double sampleStart = tip.getTrackItem().getTimeFrom();
 		double sampleEnd = tip.getTrackItem().getTimeTo();
 		if(startTime < sampleStart && endTime >= sampleStart) {
-			//dodajemy ciszê z przodu bufora
+			//dodajemy ciszï¿½ z przodu bufora
 			int tmpFrames = frames - (int)timeToSamples(sampleStart - startTime);
 			byte[] tmpBuff = tip.getBytes(0, tmpFrames);
 			System.arraycopy(tmpBuff, 0, fetchBuffer, (frames - tmpFrames) * frameSize, tmpFrames * frameSize);
 //			printBuffer(fetchBuffer);
 		} else if(startTime >= sampleStart && endTime <= sampleEnd) {
-			//bierzemy ca³¹...
+			//bierzemy caï¿½ï¿½...
 			double s = trackToItemTime(startTime, tip);
 			tip.getBytesInto(fetchBuffer, (int)timeToSamples(s), frames);
 		} else if(startTime <= sampleEnd && endTime > sampleEnd){
-			//dodajemy ciszê na koniec próbki TODO - sprawdzic czemu tutaj nie w³azi...? z³y warunek
+			//dodajemy ciszï¿½ na koniec prï¿½bki TODO - sprawdzic czemu tutaj nie wï¿½azi...? zï¿½y warunek
 			int tmpFrames = frames - (int)timeToSamples(sampleEnd - endTime);
 			byte[] tmpBuff = tip.getBytes(0, tmpFrames);
 			System.arraycopy(tmpBuff, 0, fetchBuffer, 0, tmpFrames);			
@@ -255,7 +245,7 @@ public class MFMixer extends MixerPanel implements ToolBarEntry {
 	
 	/**
 	 * 
-	 * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+	 * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
 	 *
 	 */
 	protected class FetchedSampleData {
@@ -324,7 +314,7 @@ public class MFMixer extends MixerPanel implements ToolBarEntry {
 		return SoundUtils.mixdownBuffers(mixAudioFormat, test);
 	}
 	/**
-	 * TODO poprawic to bo w pytkie nie tak jak powinno byæ jest...
+	 * TODO poprawic to bo w pytkie nie tak jak powinno byï¿½ jest...
 	 * 
 	 * @author <a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
 	 *

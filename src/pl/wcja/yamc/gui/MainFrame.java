@@ -11,7 +11,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -115,10 +114,10 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 	private void initTestTune() {
 		Tune tt = new Tune(90, "default test tune...");
 		tt.setViewFrom(-5);
-		tt.setViewTo(15);
+		tt.setViewTo(65);
 		for(int i = 0; i <= 3; i++) {
 			Track t = new Track(String.format("Track %s", i));
-			t.addItem(new TrackItem(t, 0, 8));
+			t.addItem(new TrackItem(t, 0, 10 + i * 2));
 			tt.addTrack(t);
 		}
 		tuneEditor.setTune(tt);

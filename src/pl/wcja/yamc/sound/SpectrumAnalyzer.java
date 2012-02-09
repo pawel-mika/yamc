@@ -7,14 +7,13 @@ import javax.sound.sampled.AudioFormat;
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
+import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.event.SpectrumAnalyzerEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerListener;
-import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.utils.SoundUtils;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
-import edu.emory.mathcs.utils.IOUtils;
 
 /**
  * Collects mixed sound data until mixedBuffer lenght == fftSize and then

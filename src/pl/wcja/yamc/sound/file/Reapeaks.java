@@ -116,6 +116,7 @@ public class Reapeaks {
 		private int divisionFactor = 0;
 		private int countOfPeakSamples = 0;
 		private short[] peaks = null;
+		private int versionMultiplier;
 		
 //		public Mipmap(int divisionFactor, int countOfPeakSamples, short[] data) {
 //			
@@ -153,8 +154,7 @@ public class Reapeaks {
 			rpkf.read(buf);
 			divisionFactor = bb.getInt();
 			countOfPeakSamples = bb.getInt();
-			//there are some differences in v1.0 (RPKM) and v1.1 (RPKN) so...
-			int versionMultiplier = rpk.getHeader().equalsIgnoreCase("RPKM") ? 1 : 2;
+			versionMultiplier = rpk.getHeader().equalsIgnoreCase("RPKM") ? 1 : 2;
 			buf = new byte[countOfPeakSamples * rpk.getChannels() * versionMultiplier * 2];
 			bb = ByteBuffer.wrap(buf);
 			rpkf.seek(dataStart);
@@ -173,9 +173,19 @@ public class Reapeaks {
 		public int getCountOfPeakSamples() {
 			return countOfPeakSamples;
 		}
+		
+		public int getVersionMultiplier() {
+			return versionMultiplier;
+		}
 
 		public short[] getPeaks() {
 			return peaks;
+		}
+		
+		public short[] getPeak(int idx) {
+			short[] peak = new short[versionMultiplier * channels];
+			System.arraycopy(peaks, idx * versionMultiplier * channels, peak, 0, peak.length);
+			return peak;
 		}
 	}
 }

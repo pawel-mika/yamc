@@ -24,6 +24,8 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 
 import pl.wcja.yamc.jcommon.Unit;
+import pl.wcja.yamc.sound.file.Reapeaks;
+import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
 
 import com.sun.media.sound.WaveFileReader;
 
@@ -42,6 +44,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private static final long serialVersionUID = 366586339790323573L;
 	private boolean debug = false;
 	private boolean info = true;
+	
+	protected Reapeaks reapeaks = null;
 	
 	private File waveFile = null;
 	private WaveFileReader wfr = new WaveFileReader();
@@ -66,7 +70,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private Color colorGrid = Color.lightGray;
 	private Color colorSelection = Color.darkGray;
 	private Color colorText = new Color(128,64,64);
-
+	
 	private List<WaveEditorPanelListener> waveformPanelListeners = new LinkedList<WaveEditorPanelListener>();
 
 	private enum SELECTION_EDIT_MODE {
@@ -132,6 +136,14 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public void setWaveFile(File waveFile) throws UnsupportedAudioFileException, IOException {
+
+		try{
+			reapeaks = new Reapeaks(
+					new File("d:\\.Backup\\02 - The Grid.mp3.reapeaks"));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
 		//remove listeners so if we crash somewhere in the middle we're going not to listen...
 		removeMouseListener(this);
 		removeMouseMotionListener(this);
@@ -278,8 +290,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * @return
 	 */
 	private double[] getSample(double sampleNo) {
-		byte[] frame = getSampleBytes(sampleNo);
 		double[] sample = new double[channels];
+		byte[] frame = getSampleBytes(sampleNo);
 		int idx = 0;
 		for(int c = 0; c < channels; c++) {
 			double value = 0;
@@ -292,6 +304,28 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		return sample;
 	}
 	
+	/**
+	 * Get a sample from reapeak mipmap
+	 * @param sampleNo
+	 * @return
+	 */
+	private double[] getReapeaksSample(double sampleNo) {
+		Mipmap mm = reapeaks.getMipmaps().get(0);
+		double[] sample = new double[reapeaks.getChannels() * mm.getVersionMultiplier()];
+		//translate sampleNo to reapeak mipmap sample number
+		int rsn = (int)(sampleNo / mm.getDivisionFactor());
+		short[] peak = mm.getPeak(rsn);
+		for(int i = 0; i < peak.length; i++) {
+			sample[i] = peak[i];
+		}
+		return sample;
+	}
+	
+	/**
+	 * 
+	 * @param sampleNo
+	 * @return
+	 */
 	private double[] getSampleAvgAbs(long sampleNo) {
 		long sampleFrom = sampleNo;
 		long sampleTo = sampleFrom + (int)samplesPerPixel;
@@ -387,7 +421,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		g.fillRect(0, 0, getWidth(), getHeight());
 		//childs + border etc
 		super.paint(g);
-		//wave i jego pierd�ki
+		//wave i jego pierdolki
 		if(buffer != null && buffer.length > 0) {
 			recalculateSamplesPerPixel();
 			if(g instanceof Graphics2D) {
@@ -402,10 +436,9 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 				if(w == 0) { w = 1; }
 				g.fillRect((int)x1, 0, w, getHeight());
 			}
-			//sample
-//			paintSample(g);
 			paintSampleAbs(g);
-//			paintSampleAbsLines(g);
+			//new way to paint sample 
+//			paintWaveform(g);
 			//marker
 			g.setColor(colorMarker);
 			g.drawLine((int)sampleToPixel(markerLocationSample), 0, (int)sampleToPixel(markerLocationSample), getHeight());
@@ -547,6 +580,52 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 				valuen = ((samplen[channel] * channelHeight) / sampleResolution);
 				g.drawLine(x, (int)(chnX - value), x + 1, (int)(chnX - valuen));
 			}
+		}
+	}
+	
+	/**
+	 * TODO - implement it.. but how?:P
+	 * Paint the waveform using pre-calculated data from reapacks or 
+	 * real data depending of samplesPerPixel ratio.
+	 * @param g
+	 */
+	private void paintWaveform(Graphics g) {
+		lastWidth = getWidth();
+		lastHeight = getHeight();
+		double channelHeight = (lastHeight / channels);
+		Rectangle b = getBounds();
+		//in case of this component bounds extends parent bounds we're
+		//going to draw only the visible region to speed up drawing!
+		Rectangle clipBounds = g.getClipBounds();
+		int from = (int)clipBounds.getX();
+		int to = from + (int)clipBounds.getWidth();
+		
+		if(samplesPerPixel > 128) {
+			//draw using accumulated data
+			for(int x = from; x < to; x++) {
+				double lts = pixelToSample(x), valuemin, valuemax;
+				double[] sample = getReapeaksSample((long)lts);
+				for(int channel = 0; channel < channels; channel++) {
+					double chnX = (channel * channelHeight) + (channelHeight / 2);
+					g.setColor(colorGrid);
+					g.drawLine(x, (int)chnX, x, (int)chnX);
+					if(selection != null && lts >= selection.getSelectionStart() && lts <= selection.getSelectionEnd()) {
+						g.setColor(colorBackground);
+					} else {
+						g.setColor(colorForeground);
+					}
+					valuemin = ((sample[channel * 2] * channelHeight) / sampleResolution);
+					valuemax = ((sample[channel * 2 + 1] * channelHeight) / sampleResolution);
+//					g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
+//					g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
+					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemax));
+//					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemin));
+					
+				}
+			}			
+		} else {
+			//draw from real data
+			paintSampleAbs(g);
 		}
 	}
 	

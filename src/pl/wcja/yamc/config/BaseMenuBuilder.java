@@ -13,7 +13,6 @@ import pl.wcja.yamc.frame.MenuEntry;
 import pl.wcja.yamc.frame.ToolBarEntry;
 import pl.wcja.yamc.frame.tools.QuitApp;
 import pl.wcja.yamc.frame.tools.ShowWaveEditor;
-import pl.wcja.yamc.gui.MFMixer;
 import pl.wcja.yamc.sound.edit.TuneEditorGridConfigPlugin;
 import pl.wcja.yamc.sound.tools.AddTrack;
 import pl.wcja.yamc.sound.tools.ImportReaperProject;
@@ -46,7 +45,7 @@ public class BaseMenuBuilder implements MenuBuilder {
 		addEntry(menuBar, new AddTrack(mf));
 		addEntry(menuBar, new ShowWaveEditor(mf));
 		
-		//TODO zautomatyzowac budowanie na podstawie konfiga i pluginów
+		//TODO zautomatyzowac budowanie na podstawie konfiga i pluginï¿½w
 	}
 	
 	private void addEntry(JMenuBar mb, MenuEntry me) {

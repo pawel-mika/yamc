@@ -1,19 +1,15 @@
 package pl.wcja.yamc.sound.tools;
 
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.plugin.ToolBarEntryPlugin;

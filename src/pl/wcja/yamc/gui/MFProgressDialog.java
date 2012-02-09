@@ -1,7 +1,5 @@
 package pl.wcja.yamc.gui;
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -13,7 +11,7 @@ import pl.wcja.yamc.frame.IMainFrame;
 
 /**
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
  *
  */
 public class MFProgressDialog extends MFDialog implements ProgressListener {
