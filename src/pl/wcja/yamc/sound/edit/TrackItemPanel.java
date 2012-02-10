@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JFrame;
 
@@ -92,7 +93,7 @@ public class TrackItemPanel extends WaveEditorPanel implements DropTargetListene
 	
 	@Override
 	public void setWaveFile(File waveFile) throws UnsupportedAudioFileException, IOException {
-		audioFileFormat = new WaveFileReader().getAudioFileFormat(waveFile);
+		AudioFileFormat audioFileFormat = new WaveFileReader().getAudioFileFormat(waveFile);
 		if(!audioFileFormat.getFormat().matches(editor.getMainFrame().getMixer().getMixAudioFormat())) {
 			DialogUtils.showError(editor, 
 					String.format("For the moment the sample MUST match: %s\r\n" +

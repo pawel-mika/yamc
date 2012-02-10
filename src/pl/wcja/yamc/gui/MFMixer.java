@@ -165,8 +165,8 @@ public class MFMixer extends MixerPanel implements ToolBarEntry {
 							}
 						} else {
 							//get empty silent buffer...
-							byte[] buf = new byte[frames * mixAudioFormat.getFrameSize()];
-							out.add(new FetchedSampleData(ti, mixAudioFormat.getChannels(), buf));
+//							byte[] buf = new byte[frames * mixAudioFormat.getFrameSize()];
+//							out.add(new FetchedSampleData(ti, mixAudioFormat.getChannels(), buf));
 						}
 					}
 				}

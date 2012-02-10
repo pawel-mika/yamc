@@ -23,6 +23,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 
+import pl.wcja.yamc.file.AbstractAudioStream;
 import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
@@ -46,15 +47,10 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private static final long serialVersionUID = 366586339790323573L;
 	private boolean debug = false;
 	private boolean info = true;
-	private WaveStream audioStream = null;
+	private AbstractAudioStream audioStream = null;
 	protected Reapeaks reapeaks = null;
-	private int avgMagQuantizer = 8;
-	private File waveFile = null;
-	private WaveFileReader wfr = new WaveFileReader();
-	protected AudioFileFormat audioFileFormat = null;
-	private AudioInputStream ais = null;
+	
 	protected int channels = 0, frameSize = 0, bytesPerChannel = 0, sampleResolution = 0;
-	private byte[] buffer = null;
 	protected long totalSamples = 0;
 	protected double visibleStart = 0, visibleEnd = 0;
 	protected double viewFromFrame = 0, viewToFrame = 0;
@@ -142,25 +138,19 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		removeMouseListener(this);
 		removeMouseMotionListener(this);
 		removeMouseWheelListener(this);
-		this.waveFile = waveFile;
-		audioFileFormat = wfr.getAudioFileFormat(waveFile);
-		ais = wfr.getAudioInputStream(waveFile);
+		
+		audioStream = new WaveStream(waveFile);
+		
 		//resetujemy poprzednie informacje...
 		selection = null;
 		viewFromFrame = 0;
-		totalSamples = (long)(viewToFrame = audioFileFormat.getFrameLength());
-		sampleResolution = (int) Math.pow(2, audioFileFormat.getFormat().getSampleSizeInBits());
-		channels = audioFileFormat.getFormat().getChannels();
-		frameSize = audioFileFormat.getFormat().getFrameSize();
+		totalSamples = (long)(viewToFrame = audioStream.getAudioFileFormat().getFrameLength());
+		sampleResolution = (int) Math.pow(2, audioStream.getAudioFileFormat().getFormat().getSampleSizeInBits());
+		channels = audioStream.getAudioFileFormat().getFormat().getChannels();
+		frameSize = audioStream.getAudioFileFormat().getFormat().getFrameSize();
 		bytesPerChannel = frameSize / channels;
 		recalculateSamplesPerPixel();
-		int readed = 0, tmpBufSize = 512 * 1024, dstIdx = 0;
-		byte [] tmpBuf = new byte[tmpBufSize];
-		buffer = new byte[(int)(totalSamples * frameSize)];
-		while((readed = ais.read(tmpBuf, 0, tmpBufSize)) != -1) {
-			System.arraycopy(tmpBuf, 0, buffer, dstIdx, (tmpBufSize != readed ? readed : tmpBufSize));
-			dstIdx += readed;
-		}
+		
 		//all ok - start listeners
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -174,7 +164,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public File getWaveFile() {
-		return waveFile;
+		return audioStream != null ? audioStream.getFile() : null;
 	}
 	
 	/* (non-Javadoc)
@@ -182,7 +172,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public AudioFileFormat getAudioFileFormat() {
-		return audioFileFormat;
+		return audioStream.getAudioFileFormat();
 	}
 	
 	/**
@@ -222,19 +212,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public double sampleToSecond(double sample) {
-		return sample / audioFileFormat.getFormat().getSampleRate();
-	}
-	
-	/**
-	 * <p> 
-	 * Returns a frame/sample at given index (sampleNo) in a form of byte array. 
-	 * @param sampleNo
-	 * @return
-	 */
-	private byte[] getSampleBytes(double sampleNo) {
-		byte[] frame = new byte[frameSize];
-		System.arraycopy(buffer, (int)sampleNo * frameSize, frame, 0, frameSize);
-		return frame;
+		return sample / audioStream.getAudioFileFormat().getFormat().getSampleRate();
 	}
 	
 	/* (non-Javadoc)
@@ -242,16 +220,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public byte[] getBytes(int sampleOffset, int samplesLen) {
-		byte[] frame = new byte[frameSize * samplesLen];
-//		System.arraycopy(buffer, sampleOffset * frameSize, frame, 0, frameSize * samplesLen);
-		int idx = 0;
-		int from = sampleOffset * frameSize;
-		int to = from + (frameSize * samplesLen);
-		for(int i = from; i < to; i++) {
-			frame[idx] = buffer[i];
-			idx++;
-		}
-		return frame;
+		return audioStream.getRawData(sampleOffset, samplesLen);
 	}
 	
 	/* (non-Javadoc)
@@ -259,13 +228,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public void getBytesInto(byte[] buf, int sampleOffset, int samplesLen) {
-		int idx = 0;
-		int from = sampleOffset * frameSize;
-		int to = from + (frameSize * samplesLen);
-		for(int i = from; i < to; i++) {
-			buf[idx] = buffer[i];
-			idx++;
-		}
+		byte[] tmp = getBytes(sampleOffset, samplesLen);
+		System.arraycopy(tmp, 0, buf, 0, buf.length);
 	}
 	
 	/* (non-Javadoc)
@@ -283,20 +247,20 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * @param sampleNo
 	 * @return
 	 */
-	private double[] getSample(double sampleNo) {
-		double[] sample = new double[channels];
-		byte[] frame = getSampleBytes(sampleNo);
-		int idx = 0;
-		for(int c = 0; c < channels; c++) {
-			double value = 0;
-			for(int b = 0; b < bytesPerChannel; b++) {
-				value += (int)frame[idx] << (b * 8);
-				idx++;
-			}
-			sample[c] = value;
-		}
-		return sample;
-	}
+//	private double[] getSample(double sampleNo) {
+//		double[] sample = new double[channels];
+//		byte[] frame = getSampleBytes(sampleNo);
+//		int idx = 0;
+//		for(int c = 0; c < channels; c++) {
+//			double value = 0;
+//			for(int b = 0; b < bytesPerChannel; b++) {
+//				value += (int)frame[idx] << (b * 8);
+//				idx++;
+//			}
+//			sample[c] = value;
+//		}
+//		return sample;
+//	}
 	
 	/**
 	 * Get a sample from reapeak mipmap
@@ -321,18 +285,18 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * @param sampleNo
 	 * @return
 	 */
-	private double[] getNormalizedSampleMag(long sampleNo) {
-		long sampleFrom = sampleNo;
-		long sampleTo = sampleFrom + (int)samplesPerPixel;
-		double[] avg = new double[channels];
-		for(long s = sampleFrom; s < sampleTo; s+=avgMagQuantizer) {
-			double[] d = getSample(s);
-			for(int c = 0; c < channels; c++) {
-				avg[c] += Math.abs(d[c]);// / samplesPerPixel; //OK
-			}
-		}
-		return avg;
-	}
+//	private double[] getNormalizedSampleMag(long sampleNo) {
+//		long sampleFrom = sampleNo;
+//		long sampleTo = sampleFrom + (int)samplesPerPixel;
+//		double[] avg = new double[channels];
+//		for(long s = sampleFrom; s < sampleTo; s+=avgMagQuantizer) {
+//			double[] d = getSample(s);
+//			for(int c = 0; c < channels; c++) {
+//				avg[c] += Math.abs(d[c]);// / samplesPerPixel; //OK
+//			}
+//		}
+//		return avg;
+//	}
 	
 	/* (non-Javadoc)
 	 * @see pl.wcja.sound.gui.WaveEditor#setMarkerLocation(double)
@@ -401,7 +365,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public double getTotalSecondLength() {
-		return audioFileFormat.getFrameLength() / audioFileFormat.getFormat().getSampleRate();
+		return audioStream.getAudioFileFormat().getFrameLength() / audioStream.getAudioFileFormat().getFormat().getSampleRate();
 	}
 
 	@Override
@@ -413,7 +377,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		//childs + border etc
 		super.paint(g);
 		//wave i jego pierdolki
-		if(buffer != null && buffer.length > 0) {
+		if(audioStream != null && audioStream.getFile().length() > 0) {
 			recalculateSamplesPerPixel();
 			if(g instanceof Graphics2D) {
 				((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -429,7 +393,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			}
 			//sample
 //			paintSampleMag(g);
-			paintSampleAbs(g);
+			paintAudioStream(g);
 			//new way to paint sample 
 //			paintWaveform(g);
 			//marker
@@ -456,7 +420,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		String txt = "";
 		g.setColor(colorText);
 		FontMetrics fm = g.getFontMetrics();
-		g.drawString("" + waveFile.getName(), 2, fm.getHeight());
+		g.drawString("" + audioStream.getFile().getName(), 2, fm.getHeight());
 		txt = String.format("SamplePerPixel: %1.4f", samplesPerPixel);
 		g.drawString(txt, (int)(getWidth() - fm.getStringBounds(txt, g).getWidth() - 2), getHeight() - 2);
 	}
@@ -467,38 +431,38 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * 
 	 * @param g
 	 */
-	private void paintSampleMag(Graphics g) {
-		lastWidth = getWidth();
-		lastHeight = getHeight();
-		double channelHeight = (lastHeight / channels);
-		Rectangle b = getBounds();
-		//in case of this component bounds extends parent bounds we're
-		//going to draw only the visible region to speed up drawing!
-		Rectangle clipBounds = g.getClipBounds();
-		int from = (int)clipBounds.getX();
-		int to = from + (int)clipBounds.getWidth() - 1;
-		if(debug) {
-			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
-		}
-		for(int x = from; x < to; x++) {
-			double fromSample = pixelToSample(x);
-			double[] sampleMag = getNormalizedSampleMag((long)fromSample);
-			sampleMag = SoundUtils.normalize(sampleMag, audioFileFormat.getFormat());
-			for(int channel = 0; channel < channels; channel++) {
-				double chnX = (channel * channelHeight) + (channelHeight / 2);
-				g.setColor(colorGrid);
-				g.drawLine(x, (int)chnX, x, (int)chnX);
-				if(selection != null && fromSample >= selection.getSelectionStart() && fromSample <= selection.getSelectionEnd()) {
-					g.setColor(colorBackground);
-				} else {
-					g.setColor(colorForeground);
-				}
-				double value = sampleMag[channel] * (channelHeight / samplesPerPixel) *  avgMagQuantizer;
-				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
-				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
-			}
-		}
-	}
+//	private void paintSampleMag(Graphics g) {
+//		lastWidth = getWidth();
+//		lastHeight = getHeight();
+//		double channelHeight = (lastHeight / channels);
+//		Rectangle b = getBounds();
+//		//in case of this component bounds extends parent bounds we're
+//		//going to draw only the visible region to speed up drawing!
+//		Rectangle clipBounds = g.getClipBounds();
+//		int from = (int)clipBounds.getX();
+//		int to = from + (int)clipBounds.getWidth() - 1;
+//		if(debug) {
+//			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
+//		}
+//		for(int x = from; x < to; x++) {
+//			double fromSample = pixelToSample(x);
+//			double[] sampleMag = getNormalizedSampleMag((long)fromSample);
+//			sampleMag = SoundUtils.normalize(sampleMag, audioFileFormat.getFormat());
+//			for(int channel = 0; channel < channels; channel++) {
+//				double chnX = (channel * channelHeight) + (channelHeight / 2);
+//				g.setColor(colorGrid);
+//				g.drawLine(x, (int)chnX, x, (int)chnX);
+//				if(selection != null && fromSample >= selection.getSelectionStart() && fromSample <= selection.getSelectionEnd()) {
+//					g.setColor(colorBackground);
+//				} else {
+//					g.setColor(colorForeground);
+//				}
+//				double value = sampleMag[channel] * (channelHeight / samplesPerPixel) *  avgMagQuantizer;
+//				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
+//				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
+//			}
+//		}
+//	}
 	
 	//TODO: add a prerender of wave to a bitmap/png and then draw it properly on the panel
 	//instead of dynamic rendering
@@ -507,7 +471,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * 
 	 * @param g
 	 */
-	private void paintSampleAbs(Graphics g) {
+	private void paintAudioStream(Graphics g) {
 		lastWidth = getWidth();
 		lastHeight = getHeight();
 		double channelHeight = (lastHeight / channels);
@@ -521,11 +485,12 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth();
 		if(debug) {
-			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
+			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
-			double[] sample = getSample((long)lts);
+//			double[] sample = getSample((long)lts);
+			double[] sample = audioStream.getSample((long)lts);
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
 				g.setColor(colorGrid);
@@ -555,13 +520,13 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth();
 		if(debug) {
-			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
+			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
 		for(int x = from; x < to - 1; x++) {
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
-			double[] sample = getSample((long)lts);
-			double[] samplen = getSample((long)ltsn);
+			double[] sample = audioStream.getSample((long)lts);
+			double[] samplen = audioStream.getSample((long)ltsn);
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
 				g.setColor(colorGrid);
@@ -620,7 +585,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			}			
 		} else {
 			//draw from real data
-			paintSampleAbs(g);
+			paintAudioStream(g);
 		}
 	}
 	
