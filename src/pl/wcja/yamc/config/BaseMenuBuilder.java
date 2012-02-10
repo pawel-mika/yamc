@@ -8,6 +8,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
+import pl.wcja.yamc.debug.ReapeaksLoad;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.MenuEntry;
 import pl.wcja.yamc.frame.ToolBarEntry;
@@ -21,6 +22,12 @@ import pl.wcja.yamc.sound.tools.OpenProject;
 import pl.wcja.yamc.sound.tools.ProjectProperities;
 import pl.wcja.yamc.sound.tools.SaveProject;
 
+/**
+ * 
+ * @author:		<a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
+ * @date:		09-02-2012
+ *
+ */
 public class BaseMenuBuilder implements MenuBuilder {
 
 	private IMainFrame mf = null;
@@ -44,8 +51,9 @@ public class BaseMenuBuilder implements MenuBuilder {
 		addEntry(menuBar, new TuneEditorGridConfigPlugin(mf));
 		addEntry(menuBar, new AddTrack(mf));
 		addEntry(menuBar, new ShowWaveEditor(mf));
+		addEntry(menuBar, new ReapeaksLoad(mf));
 		
-		//TODO zautomatyzowac budowanie na podstawie konfiga i plugin�w
+		//TODO Automate menu building using config files/plugins
 	}
 	
 	private void addEntry(JMenuBar mb, MenuEntry me) {

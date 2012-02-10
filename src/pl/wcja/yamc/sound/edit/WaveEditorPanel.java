@@ -23,6 +23,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 
+import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
@@ -45,6 +46,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private static final long serialVersionUID = 366586339790323573L;
 	private boolean debug = false;
 	private boolean info = true;
+	private WaveStream audioStream = null;
 	protected Reapeaks reapeaks = null;
 	private int avgMagQuantizer = 8;
 	private File waveFile = null;
@@ -136,14 +138,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	@Override
 	public void setWaveFile(File waveFile) throws UnsupportedAudioFileException, IOException {
-
-		try{
-			reapeaks = new Reapeaks(
-					new File("d:\\.Backup\\02 - The Grid.mp3.reapeaks"));
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-		
 		//remove listeners so if we crash somewhere in the middle we're going not to listen...
 		removeMouseListener(this);
 		removeMouseMotionListener(this);
@@ -305,14 +299,13 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	}
 	
 	/**
-<<<<<<< HEAD
 	 * Get a sample from reapeak mipmap
 	 * @param sampleNo
 	 * @return
 	 */
 	private double[] getReapeaksSample(double sampleNo) {
 		Mipmap mm = reapeaks.getMipmaps().get(0);
-		double[] sample = new double[reapeaks.getChannels() * mm.getVersionMultiplier()];
+		double[] sample = new double[reapeaks.getChannels() * reapeaks.getVersionMultiplier()];
 		//translate sampleNo to reapeak mipmap sample number
 		int rsn = (int)(sampleNo / mm.getDivisionFactor());
 		short[] peak = mm.getPeak(rsn);

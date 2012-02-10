@@ -62,22 +62,61 @@ public class DialogUtils {
 		JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
 	}
 	
+	/**
+	 * 
+	 * @param parent
+	 * @return
+	 */
 	public static File selectSaveFile(Component parent) {
-		JFileChooser jfc = new JFileChooser(System.getProperty("user.dir"));		
+		return selectFile(parent, null);
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param currentDirectory
+	 * @return
+	 */
+	public static File selectSaveFile(Component parent, File currentDirectory) {
+		JFileChooser jfc = currentDirectory == null ? 
+				new JFileChooser(System.getProperty("user.dir")) :
+				new JFileChooser(currentDirectory);		
 		if(jfc.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
 			return jfc.getSelectedFile();
 		}
 		return null;
 	}
 	
+	/**
+	 * 
+	 * @param parent
+	 * @return
+	 */
 	public static File selectFile(Component parent) {
-		JFileChooser jfc = new JFileChooser(System.getProperty("user.dir"));		
+		return selectFile(parent, null);
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param currentDirectory
+	 * @return
+	 */
+	public static File selectFile(Component parent, File currentDirectory) {
+		JFileChooser jfc = currentDirectory == null ? 
+				new JFileChooser(System.getProperty("user.dir")) :
+				new JFileChooser(currentDirectory);		
 		if(jfc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
 			return jfc.getSelectedFile();
 		}
 		return null;
 	}
 	
+	/**
+	 * 
+	 * @param mf
+	 * @param tip
+	 */
 	public static void showTrackItemPanelDialog(IMainFrame mf, TrackItemPanel tip) {
 		MFOkCancelDialog d = new MFOkCancelDialog(mf) {
 			
