@@ -51,7 +51,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 	private Database database = null;
 	private WaveEditorPanel waveEditor = null;
 	private TuneEditorGrid tuneEditor = null;
-	private MFMixer mfMixer = null;
+	private MFMixerPanel mfMixer = null;
 	private JSplitPane mainSplitPane = null;
 	private SpectrumAnalyzer spectrumAnalyzer = null;
 	
@@ -96,7 +96,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		mfToolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
 		add(mfToolBar, BorderLayout.NORTH);
 		
-		mfMixer = new MFMixer(this);
+		mfMixer = new MFMixerPanel(this);
 		mfToolBar.add(mfMixer);
 		
 		new BaseMenuBuilder(this).build(mfMenuBar);
@@ -183,7 +183,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		return mfToolBar;
 	}
 	
-	public MFMixer getMixer() {
+	public MFMixerPanel getMixer() {
 		return mfMixer;
 	}
 	

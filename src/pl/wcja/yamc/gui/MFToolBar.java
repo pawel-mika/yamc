@@ -1,8 +1,11 @@
 package pl.wcja.yamc.gui;
 
+import java.awt.Component;
+
 import javax.swing.JToolBar;
 
 import pl.wcja.yamc.frame.IMainFrame;
+import pl.wcja.yamc.frame.ToolBarEntry;
 
 /**
  * 
@@ -30,6 +33,10 @@ public class MFToolBar extends JToolBar {
 	public MFToolBar(IMainFrame mf, String name, int orientation) {
 		super(name, orientation);
 		this.mf = mf;
+	}
+	
+	public Component add(ToolBarEntry e) {
+		return super.add(e.getToolbarComponent());
 	}
 
 }
