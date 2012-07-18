@@ -115,9 +115,11 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		Tune tt = new Tune(90, "default test tune...");
 		tt.setViewFrom(-5);
 		tt.setViewTo(65);
-		for(int i = 0; i <= 3; i++) {
+		for(int i = 0; i <= 4; i++) {
 			Track t = new Track(String.format("Track %s", i));
-			t.addItem(new TrackItem(t, 0, 10 + i * 2));
+			if(i % 2 == 0) {
+				t.addItem(new TrackItem(t, 0, 10 + i * 2));
+			}
 			tt.addTrack(t);
 		}
 		tuneEditor.setTune(tt);

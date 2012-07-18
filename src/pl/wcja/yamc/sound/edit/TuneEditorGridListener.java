@@ -14,4 +14,6 @@ public interface TuneEditorGridListener {
 
 	public void selectionChanged(SelectionChangedEvent e);
 	
+	//public void trackItemMoved(); + scaled?
+	
 }

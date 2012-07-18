@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 /**
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
  *
  */
 public class Tune implements Serializable {
@@ -17,6 +17,10 @@ public class Tune implements Serializable {
 	
 	private double viewFrom = 0;
 	private double viewTo = 15;
+	
+	private double timeStart = Double.MAX_VALUE;
+	private double timeEnd = Double.MIN_VALUE;
+	private double lenght = 0;
 	
 	private ArrayList<Track> tracks = new ArrayList<Track>();
 
@@ -49,6 +53,7 @@ public class Tune implements Serializable {
 	
 	public void addTrack(Track track) {
 		tracks.add(track);
+		updateTuneLength();
 	}
 	
 	public void addTrack() {
@@ -61,6 +66,7 @@ public class Tune implements Serializable {
 	
 	public void removeTrack(Track track) {
 		tracks.remove(track);
+		updateTuneLength();
 	}
 
 	/**
@@ -103,5 +109,29 @@ public class Tune implements Serializable {
 	 */
 	public void setTuneName(String tuneName) {
 		this.tuneName = tuneName;
+	}
+	
+	public double getLength() {
+		return lenght;
+	}
+	
+	/**
+	 * 
+	 */
+	public void updateTuneLength() {
+		for(Track t : tracks) {
+			for(TrackItem ti : t.getItems()) {
+				timeStart = ti.getTimeFrom() < timeStart ? ti.getTimeFrom() : timeStart;
+				timeEnd = ti.getTimeTo() > timeEnd ? ti.getTimeTo() : timeEnd;
+			}
+		}
+		//nothing found - zero all!
+		if(timeStart == Double.MAX_VALUE && timeEnd == Double.MIN_VALUE) {
+			timeStart = 0;
+			timeEnd = 0;
+			lenght = 0;
+		} else {
+			lenght = timeEnd - timeStart;
+		}
 	}
 }

@@ -7,6 +7,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -37,6 +38,7 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -63,7 +65,7 @@ public class TuneEditorGrid extends JComponent
 	implements TuneEditor, ComponentListener, DropTargetListener, 
 	MouseWheelListener, MouseMotionListener, MouseListener, Configurable, PopupMenuListener {
 
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	private JPopupMenu popupMenu = null;
 
@@ -84,7 +86,8 @@ public class TuneEditorGrid extends JComponent
 	private double beatPerSecond = 0;
 	
 	private double beatQuantizer = 1 / 8;
-	private double beatPaintStep = 2;
+	private double beatPaintQuantizer = Math.pow(2, 8);
+//	private double beatSnapQuantizer = Math.pow(2, 8);
 	private Double markerPosition = Double.valueOf(0);
 	
 	private int marginTop = 0, marginBottom = 0;
@@ -96,6 +99,8 @@ public class TuneEditorGrid extends JComponent
 	private Color colorGridBeats = new Color(128, 128, 192);
 	private Color colorGridBeatsLight = new Color(192, 192, 224);
 	private Color colorSelection = Color.darkGray;
+	private Color beatFont = new Color(192, 192, 64);
+	private Color timeFont = new Color(80, 192, 192);
 	
 	private DecimalFormat unitFormat = new DecimalFormat("###0.000");
 	
@@ -155,7 +160,7 @@ public class TuneEditorGrid extends JComponent
 			return value;
 		}
 	}
-	private GridDisplay gridDisplay = GridDisplay.SECONDS;	
+	private GridDisplay gridDisplay = GridDisplay.BOTH;	
 	
 	/**
 	 * <p>
@@ -496,7 +501,6 @@ public class TuneEditorGrid extends JComponent
 		long paintTime = System.nanoTime();
 		if(tune != null) {
 			recalculateRatios();
-
 			if(g instanceof Graphics2D) {
 				((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
@@ -504,7 +508,8 @@ public class TuneEditorGrid extends JComponent
 			g.setColor(colorBackground);
 			g.fillRect(0, 0, getWidth(), getHeight());
 			//paint the grid - vertical 'beats' and horizontal tracks lines
-			paintBeatGrid(g);
+//			paintBeatGrid(g);
+			paintBeatGridNew(g);
 			paintTrackLines(g);
 		}
 		//paint children...
@@ -522,6 +527,7 @@ public class TuneEditorGrid extends JComponent
 	 * 
 	 * @param g
 	 */
+	@Deprecated
 	private void paintBeatGrid(Graphics g) {
 		if(tune != null) {
 			FontMetrics fm = g.getFontMetrics();
@@ -533,21 +539,21 @@ public class TuneEditorGrid extends JComponent
 			labelBounds = new Rectangle2D.Double(labelBounds.getX(), labelBounds.getY(), labelBounds.getWidth(), labelBounds.getHeight() * 2);	
 			marginTop = (int)labelBounds.getHeight() + 1;
 			double x = beatToPixel(1);
-			beatPaintStep = Math.pow(2, 6);
-			while((x * beatPaintStep) > (labelBounds.getWidth() * 3)) {
-				beatPaintStep /= 2;
+			beatPaintQuantizer = Math.pow(2, 6);
+			while((x * beatPaintQuantizer) > (labelBounds.getWidth() * 3)) {
+				beatPaintQuantizer /= 2;
 			}
-			double margin = Math.pow(2, beatPaintStep);
+			double margin = Math.pow(2, beatPaintQuantizer);
 			if(margin >= (viewFrom - viewTo)) {
 				margin = Math.abs(viewFrom - viewTo);
 			}
-			double modulovf = (secondToBeat(Math.round(viewFrom - margin)) % beatPaintStep);
-			double modulovt = (secondToBeat(Math.round(viewTo + margin)) % beatPaintStep);
+			double modulovf = (secondToBeat(Math.round(viewFrom - margin)) % beatPaintQuantizer);
+			double modulovt = (secondToBeat(Math.round(viewTo + margin)) % beatPaintQuantizer);
 			double from = secondToBeat(Math.round(viewFrom - margin)) - modulovf;
 			double to = secondToBeat(Math.round(viewTo + margin)) + modulovt;
 			
 			int lineHeight = getHeight() - marginBottom;
-			for(double vf = from; vf <= to; vf += beatPaintStep) {
+			for(double vf = from; vf <= to; vf += beatPaintQuantizer) {
 				x = Math.round(beatToPixelAbsolute(vf));
 				g.setColor(vf % 1 == 0 ? colorGridBeats : colorGridBeatsLight);
 				g.drawLine((int)x, marginTop, (int)x, lineHeight);
@@ -555,7 +561,7 @@ public class TuneEditorGrid extends JComponent
 			}
 			if(debug) {
 				System.out.println(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; margin: %s", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo, margin));
-				System.out.println(String.format("Drawing beat grid: %s - %s; modulo [from, to]: %s, %s; step: %s; beatPerPixel: %s", from, to, modulovf, modulovt, beatPaintStep, beatPerPixel));
+				System.out.println(String.format("Drawing beat grid: %s - %s; modulo [from, to]: %s, %s; step: %s; beatPerPixel: %s", from, to, modulovf, modulovt, beatPaintQuantizer, beatPerPixel));
 			}
 		}
 	}
@@ -566,6 +572,7 @@ public class TuneEditorGrid extends JComponent
 	 * @param g
 	 * @param beat
 	 */
+	@Deprecated
 	private void paintBeatLabel(Graphics g, Rectangle2D maxRect, double beat, Color bgColor) {
 		FontMetrics fm = g.getFontMetrics();
 		Graphics tg = g.create();
@@ -580,73 +587,132 @@ public class TuneEditorGrid extends JComponent
 		tg.setColor(Color.white);
 		tg.drawRect(0, 0, (int)maxRect.getWidth(), (int)maxRect.getHeight());
 		tg.setColor(colorForeground);
+		tg.setColor(beatFont);
 		tg.drawString(sb, 3, ((int)maxRect.getHeight() / 2) - 2);
+		tg.setColor(timeFont);
 		tg.drawString(ss, 3, (int)maxRect.getHeight() - 2);
 				
 		tg.finalize();
 	}
 	
 	/**
-	 * <p>
-	 * juz tego nie bedizemy raczej uzywac - beaty + sekundy robimy na jednej labelce
+	 * Paint vertical beat, beat/N lines
 	 * @param g
 	 */
-	@Deprecated
-	private void paintTimeGrid(Graphics g) {
+	private void paintBeatGridNew(Graphics g) {
+		FontMetrics fm = g.getFontMetrics();
+		Graphics tg = g.create();
+		
 		if(tune != null) {
-			FontMetrics fm = g.getFontMetrics();
-			//let's calculate if painted string fits between grid lines
-			//and in that case resize it accordingly
-			String pattern = "- " + unitFormat.format(viewTo); 
-			Rectangle2D b = fm.getStringBounds(pattern, g);
-			marginTop = (int)Math.round(b.getHeight()) + 1;
-			double x = Math.round(secondToPixel(1));
-			double step = Math.pow(2, 6);
-			while((x * step) > (b.getWidth() * 3)) {
-				step /= 2;
-			}			
-			long moduloFrom = (long)(Math.round(viewFrom) % step);
-			long moduloTo = (long)(Math.round(viewTo) % step);
-			long from = Math.round(viewFrom) - (moduloFrom + (long)step);
-			long to =  Math.round(viewTo) + (moduloTo + (long)step);
+//			String labels = "", labelb = ""; 
+//			if(gridDisplay == GridDisplay.SECONDS) {
+//				labels = unitFormat.format(999.999d) + "s";
+//			} else if(gridDisplay == GridDisplay.BEATS) {
+//				labelb = unitFormat.format(999.999d) + "b";
+//			} else if(gridDisplay == GridDisplay.BOTH) {
+//				labels = unitFormat.format(999.999d) + "s"; 
+//				labelb = unitFormat.format(999.999d) + "b";
+//			} else if(gridDisplay == GridDisplay.NONE) {
+//				
+//			}
+			Rectangle2D stringBounds = getMaxStringBounds(viewFrom, viewTo, tg);
+			double quantizer = pixelToSecond(stringBounds.getWidth());
+			double pixelPerBeat = beatToPixel(1);
+			double fraction = pixelPerBeat >= stringBounds.getWidth() ? 1.0d / (int)(Math.round(pixelPerBeat) / stringBounds.getWidth()) : 1.0d;
+			quantizer = quantizer < 1 ? fraction : Math.round(quantizer + 0.5d);
+//			quantizer = Math.round(quantizer * 1000.0d) / 1000.0d;
+			double mt = (int)stringBounds.getHeight() + 1;
+			mt = gridDisplay == GridDisplay.BOTH ? mt * 2 : mt;
+			setMarginTop((int)mt);
+
+			double from = Math.round(viewFrom - 0.5d);
+			double to = Math.round(viewTo + 0.5d);
+
+			//lets even it to pair number to be sure we cross '0' and the
+			//grid doesn't flicker 
+			from = from % 2 != 0 ? from - 1.0d : from;
+			from = quantizer % 2 != 0 ? ((int)(from / quantizer) * quantizer) - quantizer : from;
 			
-			int lineHeight = getHeight() - marginBottom;
-			for(double vf = from; vf < to; vf += step) {
-				x = Math.round(secondToPixelAbsolute(vf));
-				g.setColor(colorGridTime);
-				g.drawLine((int)x, marginTop, (int)x, lineHeight);
-				String time = unitFormat.format(vf);
-				drawLabelAtXCentered(g, 0, b, (int)x, time, colorGridTime);
+			for(double dt = 0; dt >= from - quantizer; dt -= quantizer) {
+				drawTimeLine(dt, stringBounds, tg);
+			}
+			for(double dt = 0 + quantizer; dt <= to; dt += quantizer) {
+				drawTimeLine(dt, stringBounds, tg);
 			}
 			if(debug) {
-				System.out.println(String.format("Seconds: %s - %s; modulo [from, to]: %s, %s; step: %s; secondPerPixel: %s", from, to, moduloFrom, moduloTo, step, secondPerPixel));
+				System.out.println(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; ", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo));
+				System.out.println(String.format("Drawing beat grid: %s - %s; step: %s; beatPerPixel: %s", from, to, beatPaintQuantizer, beatPerPixel));
 			}
 		}
+		tg.finalize();
 	}
 	
 	/**
 	 * 
+	 * @param time
+	 * @param stringBounds
 	 * @param g
-	 * @param y
-	 * @param maxRect
-	 * @param x
-	 * @param str
-	 * @param bgColor
 	 */
-	private void drawLabelAtXCentered(Graphics g, int y, Rectangle2D maxRect, int x, String str, Color bgColor) {
-		FontMetrics fm = g.getFontMetrics();
-		Graphics tg = g.create();
-		tg.translate((int)(x - (maxRect.getWidth() / 2) ), y);
-		tg.setColor(bgColor);
-		tg.fillRect(0, 0, (int)maxRect.getWidth(), (int)maxRect.getHeight());
-		tg.setColor(Color.white);
-		tg.drawRect(0, 0, (int)maxRect.getWidth(), (int)maxRect.getHeight());
-		tg.setColor(colorForeground);
-		Rectangle2D sb = fm.getStringBounds(str, tg);
-		tg.drawString(str, (int)(Math.round((maxRect.getWidth() - sb.getWidth()) / 2)), (int)sb.getHeight() - 2);
-		tg.finalize();
+	private void drawTimeLine(double time, Rectangle2D stringBounds, Graphics g) {
+		int lineHeight = getHeight();
+		int ix = (int)secondToPixelAbsolute(time);
+		String labels = "", labelb = "";
+		if((Math.round(time * 1000.d) / 1000.d) % 1 == 0) {
+			g.setColor(Color.DARK_GRAY);
+			g.drawLine(ix, marginTop, ix, lineHeight);	
+		} else {
+			g.setColor(Color.LIGHT_GRAY);
+			g.drawLine(ix, marginTop, ix, lineHeight);
+		}
+		if(gridDisplay == GridDisplay.SECONDS) {
+			labels = unitFormat.format(time) + "s";
+			g.drawString(labels, ix, 0 + (int)stringBounds.getHeight());
+		} else if(gridDisplay == GridDisplay.BEATS) {
+			labelb = unitFormat.format(secondToBeat(time)) + "b";
+			g.drawString(labelb, ix, 0 + (int)stringBounds.getHeight());
+		} else if(gridDisplay == GridDisplay.BOTH) {
+			labels = unitFormat.format(time) + "s"; 
+			labelb = unitFormat.format(secondToBeat(time)) + "b";
+			g.drawString(labels, ix, 0 + (int)stringBounds.getHeight());
+			g.drawString(labelb, ix, marginTop);
+		}
 	}
 	
+	/**
+	 * Get the maximum string bound for display label to be sure
+	 * it fits in the space between the grid lines.
+	 * @param from
+	 * @param to
+	 * @param g
+	 * @return
+	 */
+	private Rectangle2D getMaxStringBounds(double from, double to, Graphics g) {
+		FontMetrics fm = g.getFontMetrics();
+		String labelSFrom = "", labelBFrom = "", labelSTo = "", labelBTo = ""; 
+		if(gridDisplay == GridDisplay.SECONDS) {
+			labelSFrom = unitFormat.format(from) + "s";
+			labelSTo = unitFormat.format(to) + "s";
+		} else if(gridDisplay == GridDisplay.BEATS) {
+			labelBFrom = unitFormat.format(secondToBeat(from)) + "b";
+			labelBTo = unitFormat.format(secondToBeat(to)) + "b";
+		} else if(gridDisplay == GridDisplay.BOTH) {
+			labelSFrom = unitFormat.format(from) + "s";
+			labelSTo = unitFormat.format(to) + "s";
+			labelBFrom = unitFormat.format(secondToBeat(from)) + "b";
+			labelBTo = unitFormat.format(secondToBeat(to)) + "b";
+		} else if(gridDisplay == GridDisplay.NONE) {
+			
+		}
+		Rectangle2D max = fm.getStringBounds(labelSFrom, g);
+		Rectangle2D sbSTo = fm.getStringBounds(labelSTo, g);
+		Rectangle2D sbBFrom = fm.getStringBounds(labelBFrom, g);
+		Rectangle2D sbBTo = fm.getStringBounds(labelBTo, g);
+		max = max.getWidth() > sbSTo.getWidth() ? max : sbSTo;
+		max = max.getWidth() > sbBFrom.getWidth() ? max : sbBFrom;
+		max = max.getWidth() > sbBTo.getWidth() ? max : sbBTo;
+		return max;
+	}
+		
 	/**
 	 * 
 	 * @param g
@@ -669,7 +735,7 @@ public class TuneEditorGrid extends JComponent
 	public void rearrangeTracks() {
 		if(tune != null) {
 			recalculateRatios();
-			int tracksNo = tune.getTracks().size();
+//			int tracksNo = tune.getTracks().size();
 			double trackHeight = getTrackHeight();
 			double componenty = marginTop;
 			for(Track track : tune.getTracks()) {
@@ -692,7 +758,17 @@ public class TuneEditorGrid extends JComponent
 				}
 				componenty += trackHeight;
 			}
+			tune.updateTuneLength();
 		}
+	}
+	
+	/**
+	 * 
+	 * @param margin
+	 */
+	private void setMarginTop(int margin) {
+		this.marginTop = margin;
+		rearrangeTracks();
 	}
 	
 	@Override

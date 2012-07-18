@@ -14,7 +14,7 @@ import pl.wcja.yamc.sound.edit.TuneEditorGrid.GridDisplay;
 
 /**
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author <a href="mailto:pawel.mika@geomar.pl">Paweï¿½ Mika</a>, Geomar SA
  *
  */
 public class TuneEditorGridConfigDialog extends JDialog {
@@ -41,9 +41,14 @@ public class TuneEditorGridConfigDialog extends JDialog {
 		add(jl, gbc);
 		gbc.gridx++;
 		
+		JComboBox select = null;
 		JComboBox jcb = new JComboBox();
 		for(GridDisplay gd : TuneEditorGrid.GridDisplay.values()) {
 			jcb.addItem(gd);
+			if(editor.getGridDisplay() == gd) {
+//				select = jcb;
+				jcb.setSelectedItem(gd);
+			}
 		}
 		jcb.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
