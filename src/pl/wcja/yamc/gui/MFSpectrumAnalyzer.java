@@ -14,6 +14,8 @@ import javax.sound.sampled.AudioFormat;
 import javax.swing.AbstractAction;
 import javax.swing.JPopupMenu;
 
+import org.apache.log4j.Logger;
+
 import pl.wcja.yamc.event.SpectrumAnalyzerEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerListener;
 import pl.wcja.yamc.frame.IMainFrame;
@@ -26,6 +28,7 @@ import pl.wcja.yamc.utils.Decibels;
  */
 public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListener {
 
+	private Logger logger = Logger.getLogger(this.getClass());
 	private int fftSize = 0;
 	private double[][] fftPerChannelBuffer = null;
 	private double[] fftSumBuffer = null;
@@ -34,6 +37,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private double bandWidth = 0;
 	private AudioFormat audioFormat = mf.getMixer().getMixAudioFormat();
 	private JPopupMenu popupMenu;
+	private double oneSecDraws = 0, avgOneSecFps = 0;
+	private long lastFpsCalcTime = 0;
 
 	public enum ViewMode {
 		LINEAR("Linear", 0),
@@ -148,6 +153,18 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		} else if(fftViewMode == ViewMode.LOGARITHMIC_2) {
 			paintLog2(g);
 		}
+		
+		if(System.currentTimeMillis() - lastFpsCalcTime >= 1000) {
+			avgOneSecFps = (oneSecDraws / (System.currentTimeMillis() - lastFpsCalcTime)) * 1000;
+			logger.info("Average one second FPS: " + avgOneSecFps);
+			oneSecDraws = 0;
+			lastFpsCalcTime = System.currentTimeMillis();
+		} else {
+			oneSecDraws++;
+		}
+		String sFps = String.format("avg 1 sec fps: %.2f", avgOneSecFps);
+		g.setColor(Color.green);
+		g.drawString(sFps, 0, getHeight() - fm.getDescent());
 	}
 	
 	private void paintLinear(Graphics g) {

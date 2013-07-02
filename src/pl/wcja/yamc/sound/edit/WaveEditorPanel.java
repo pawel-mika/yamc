@@ -23,6 +23,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 
+import org.apache.log4j.Logger;
+
 import pl.wcja.yamc.file.AbstractAudioStream;
 import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
@@ -41,9 +43,7 @@ import com.sun.media.sound.WaveFileReader;
  */
 public class WaveEditorPanel extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, WaveEditor {
 	
-	/**
-	 * 
-	 */
+	private Logger logger = Logger.getLogger(this.getClass());
 	private static final long serialVersionUID = 366586339790323573L;
 	private boolean debug = false;
 	private boolean info = true;
@@ -406,7 +406,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 		if(debug) {
 			long l = System.nanoTime() - paintTime;
-			System.out.println(String.format(this.getClass().getCanonicalName() + " drawing time: %sns (%s\u00B5s); clip: %s", l, l / 1000, g.getClipBounds()));
+			logger.info(String.format("drawing time: %sns (%s\u00B5s); clip: %s", l, l / 1000, g.getClipBounds()));
 		}
 	}
 	
@@ -485,7 +485,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth();
 		if(debug) {
-			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
+			logger.info(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
@@ -520,7 +520,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth();
 		if(debug) {
-			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
+			logger.info(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
 		for(int x = from; x < to - 1; x++) {
 			double lts = pixelToSample(x), value;

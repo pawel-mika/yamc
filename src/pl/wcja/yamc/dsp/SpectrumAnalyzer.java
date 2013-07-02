@@ -4,6 +4,8 @@ import java.util.LinkedList;
 
 import javax.sound.sampled.AudioFormat;
 
+import org.apache.log4j.Logger;
+
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
@@ -27,6 +29,7 @@ import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
  */
 public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 
+	private Logger logger = Logger.getLogger(this.getClass());
 	protected IMainFrame mf = null;
 	private int fftSize = 0;
 	private int byteBufSize = 0;
@@ -222,7 +225,7 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 			double buffer[] = null; 
 			double fftBuffers[][] = null;
 			
-			System.out.println("**** mixed buf len: " + mixedBuffer.length + ", performing FFT analysis...");
+			logger.info("**** mixed buf len: " + mixedBuffer.length + ", performing FFT analysis...");
 			buffer = SoundUtils.byteArrayToDoubleArray(mixedBuffer, 2, audioFormat.isBigEndian());
 			fftBuffers = SoundUtils.splitChannels(buffer, audioFormat.getChannels());
 			for(int c = 0; c < fftBuffers.length; c++) {

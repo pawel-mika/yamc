@@ -43,6 +43,9 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import org.apache.log4j.Logger;
+
+import pl.wcja.yamc.debug.DebugConfig;
 import pl.wcja.yamc.frame.Configurable;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.gui.MFProgressDialog;
@@ -64,8 +67,8 @@ import pl.wcja.yamc.utils.RandomGenerator;
 public class TuneEditorGrid extends JComponent 
 	implements TuneEditor, ComponentListener, DropTargetListener, 
 	MouseWheelListener, MouseMotionListener, MouseListener, Configurable, PopupMenuListener {
-
-	private boolean debug = true;
+	
+	private Logger logger = Logger.getLogger(this.getClass());
 	
 	private JPopupMenu popupMenu = null;
 
@@ -517,9 +520,10 @@ public class TuneEditorGrid extends JComponent
 		//marker
 		g.setColor(colorMarker);
 		g.drawLine((int)secondToPixelAbsolute(markerPosition), 0, (int)secondToPixelAbsolute(markerPosition), getHeight());
-		if(debug) {
+		if(DebugConfig.getInstance().isDebugTuneEditorGridDrawing()) {
 			long l = System.nanoTime() - paintTime;
-			System.out.println(String.format(this.getClass().getCanonicalName() + " drawing time: %sns (%s\u00B5s); clip: %s", l, l / 1000, g.getClipBounds()));
+//			System.out.println(String.format(this.getClass().getCanonicalName() + " drawing time: %sns (%s\u00B5s); clip: %s", l, l / 1000, g.getClipBounds()));
+			logger.debug(String.format("Drawing time: %sns (%s\u00B5s); clip: %s", l, l / 1000, g.getClipBounds()));
 		}
 	}
 	
@@ -559,9 +563,9 @@ public class TuneEditorGrid extends JComponent
 				g.drawLine((int)x, marginTop, (int)x, lineHeight);
 				paintBeatLabel(g, labelBounds, vf, colorGridBeats);
 			}
-			if(debug) {
-				System.out.println(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; margin: %s", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo, margin));
-				System.out.println(String.format("Drawing beat grid: %s - %s; modulo [from, to]: %s, %s; step: %s; beatPerPixel: %s", from, to, modulovf, modulovt, beatPaintQuantizer, beatPerPixel));
+			if(DebugConfig.getInstance().isDebugTuneEditorGridDrawing()) {
+				logger.debug(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; margin: %s", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo, margin));
+				logger.debug(String.format("Drawing beat grid: %s - %s; modulo [from, to]: %s, %s; step: %s; beatPerPixel: %s", from, to, modulovf, modulovt, beatPaintQuantizer, beatPerPixel));
 			}
 		}
 	}
@@ -639,9 +643,9 @@ public class TuneEditorGrid extends JComponent
 			for(double dt = 0 + quantizer; dt <= to; dt += quantizer) {
 				drawTimeLine(dt, stringBounds, tg);
 			}
-			if(debug) {
-				System.out.println(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; ", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo));
-				System.out.println(String.format("Drawing beat grid: %s - %s; step: %s; beatPerPixel: %s", from, to, beatPaintQuantizer, beatPerPixel));
+			if(DebugConfig.getInstance().isDebugTuneEditorGridDrawing()) {
+				logger.debug(String.format("Orginal view beat grid: %s - %s; viewFrom - viewTo (seconds): %s - %s; ", secondToBeat(Math.round(viewFrom)), secondToBeat(Math.round(viewTo)), viewFrom, viewTo));
+				logger.debug(String.format("Drawing beat grid: %s - %s; step: %s; beatPerPixel: %s", from, to, beatPaintQuantizer, beatPerPixel));
 			}
 		}
 		tg.finalize();

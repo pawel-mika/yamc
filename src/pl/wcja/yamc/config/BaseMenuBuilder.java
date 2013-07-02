@@ -8,6 +8,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
+import pl.wcja.yamc.debug.DebugConfigPlugin;
 import pl.wcja.yamc.debug.ReapeaksLoad;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.MenuEntry;
@@ -52,6 +53,8 @@ public class BaseMenuBuilder implements MenuBuilder {
 		addEntry(menuBar, new AddTrack(mf));
 		addEntry(menuBar, new ShowWaveEditor(mf));
 		addEntry(menuBar, new ReapeaksLoad(mf));
+		
+		addEntry(menuBar, new DebugConfigPlugin(mf));
 		
 		//TODO Automate menu building using config files/plugins
 	}

@@ -14,6 +14,9 @@ import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.SourceDataLine;
 
+import org.apache.log4j.Logger;
+
+import pl.wcja.yamc.debug.DebugConfig;
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
@@ -34,9 +37,10 @@ import pl.wcja.yamc.utils.SoundUtils;
  */
 public class MainMixer {
 	
+	private Logger logger = Logger.getLogger(this.getClass());
+	
 	protected IMainFrame mf = null;
 	
-	private boolean debugPerTrackFetch = false, debugCompleteFetch = true, debugBufferMix = true;
 	private long fetchTime = 0, completeFetchTime = 0, bufferMixTime = 0;
 	
 	private Thread playerThread = null;
@@ -191,16 +195,16 @@ public class MainMixer {
 					for(TrackItem ti : t.getItems()) {
 						TrackItemPanel tip = mf.getTuneEditor().getTrackItemPanel(ti);
 						if(includeTrackItemPanelInMix(position, frames, tip)) {
-							if(debugPerTrackFetch) {
+							if(DebugConfig.getInstance().isDebugPerTrackFetch()) {
 								fetchTime = System.nanoTime();
-								System.out.print(String.format("Fetching %s for %s samples from %s", tip.getWaveFile().getName(), frames, position));
+								logger.info(String.format("Fetching %s for %s samples from %s", tip.getWaveFile().getName(), frames, position));
 							}
 							byte[] buf = new byte[frames * mixAudioFormat.getFrameSize()];
 							fetchTrackItemPanel(buf, tip, position, frames, mixAudioFormat.getFrameSize());
 							out.add(new FetchedSampleData(ti, tip.getAudioFileFormat().getFormat().getChannels(), buf));
-							if(debugPerTrackFetch) {
+							if(DebugConfig.getInstance().isDebugPerTrackFetch()) {
 								long l = System.nanoTime() - fetchTime;
-								System.out.println(String.format(" - done in: %sns (%s\u00B5s, %ss)", l, l / 1000, (double)l / 1000000));
+								logger.info(String.format(" - done in: %sns (%s\u00B5s, %ss)", l, l / 1000, (double)l / 1000000));
 							}
 						} else {
 							//get empty silent buffer...
@@ -209,9 +213,9 @@ public class MainMixer {
 						}
 					}
 				}
-				if(debugCompleteFetch) {
+				if(DebugConfig.getInstance().isDebugCompleteFetch()) {
 					long l = System.nanoTime() - completeFetchTime;
-					System.out.println(String.format("Complete fetching done in: %sns (%s\u00B5s, %sms, %ss)", l, l / 1000, (double)l / 1000000, (double)l / 1000000000));
+					logger.info(String.format("Complete fetching done in: %sns (%s\u00B5s, %sms, %ss)", l, l / 1000, (double)l / 1000000, (double)l / 1000000000));
 				}
 				//if no fetched data - add empty track to keep datalines busy;)
 				if(out.isEmpty()) {
@@ -375,13 +379,13 @@ public class MainMixer {
 				mf.getTuneEditor().setMarkerLocation(d + t);
 
 				Collection<FetchedSampleData> fetched = fetchTune(d - t, mixBufferSampleLen);
-				if(debugBufferMix) {
+				if(DebugConfig.getInstance().isDebugBufferMix()) {
 					bufferMixTime = System.nanoTime();
 				}
 				byte[] test = mixFetchedData(fetched);	//test new mixing using floating point mixer method
-				if(debugBufferMix) {
+				if(DebugConfig.getInstance().isDebugBufferMix()) {
 					long l = System.nanoTime() - bufferMixTime;
-					System.out.println(String.format("Fetched data (%s streams) mix done in: %sns (%s\u00B5s, %sms)", 
+					logger.info(String.format("Fetched data (%s streams) mix done in: %sns (%s\u00B5s, %sms)", 
 							fetched.size(), l, l / 1000, (double)l / 1000000));
 				}
 				fireMixerEvent(new BufferMixedEvent(this, mixAudioFormat, test));
@@ -389,11 +393,11 @@ public class MainMixer {
 				//
 				defaultDataLine.write(test, 0, test.length);
 				defaultDataLine.start();
-				System.out.println(String.format("----> bufferSize: %s, available to write: %s", defaultDataLine.getBufferSize(), defaultDataLine.available()));
+				logger.info(String.format("----> bufferSize: %s, available to write: %s", defaultDataLine.getBufferSize(), defaultDataLine.available()));
 				if(defaultDataLine.getBufferSize() == defaultDataLine.available()) {
-					System.out.println(" -- buffer underrun!!");
+					logger.error(" -- buffer underrun!!");
 				} else if(defaultDataLine.available() == 0) {
-					System.out.println(" -- buffer overrunn!!");
+					logger.error(" -- buffer overrunn!!");
 				}
 			}
 		}
