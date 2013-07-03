@@ -2,6 +2,8 @@ package pl.wcja.yamc.gui;
 
 import java.awt.BorderLayout;
 
+import javax.swing.JFrame;
+
 import pl.wcja.yamc.frame.IMainFrame;
 
 public class AnalyzerDialog extends MFOkCancelDialog {
@@ -9,7 +11,7 @@ public class AnalyzerDialog extends MFOkCancelDialog {
 	MFSpectrumAnalyzer mfs = null;
 	
 	public AnalyzerDialog(IMainFrame mf) {
-		super(mf);
+		super(mf, (JFrame)mf);
 		mfs = new MFSpectrumAnalyzer(mf);
 		add(mfs, BorderLayout.CENTER);
 		pack();

@@ -1,6 +1,7 @@
 package pl.wcja.yamc.dsp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,6 +14,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.SourceDataLine;
+import javax.swing.border.EmptyBorder;
 
 import org.apache.log4j.Logger;
 
@@ -62,7 +64,6 @@ public class MainMixer {
 	private List<MixerListener> mixerListeners = new LinkedList<MixerListener>();
 	
 	private TrackItem emptyTrackItem = new TrackItem(new Track("fake empty track"), 0, 0);
-	
 	
 	/**
 	 * 
@@ -240,23 +241,22 @@ public class MainMixer {
 		double sampleStart = tip.getTrackItem().getTimeFrom();
 		double sampleEnd = tip.getTrackItem().getTimeTo();
 		if(startTime < sampleStart && endTime >= sampleStart) {
-			//dodajemy cisz� z przodu bufora
+			//dodajemy cisze z przodu bufora
 			int tmpFrames = frames - (int)timeToSamples(sampleStart - startTime);
 			byte[] tmpBuff = tip.getBytes(0, tmpFrames);
 			System.arraycopy(tmpBuff, 0, fetchBuffer, (frames - tmpFrames) * frameSize, tmpFrames * frameSize);
 //			printBuffer(fetchBuffer);
 		} else if(startTime >= sampleStart && endTime <= sampleEnd) {
-			//bierzemy ca��...
+			//bierzemy calosc...
 			double s = trackToItemTime(startTime, tip);
 			tip.getBytesInto(fetchBuffer, (int)timeToSamples(s), frames);
 		} else if(startTime <= sampleEnd && endTime > sampleEnd){
-			//dodajemy cisz� na koniec pr�bki TODO - sprawdzic czemu tutaj nie w�azi...? z�y warunek
+			//dodajemy cisze na koniec probki TODO - sprawdzic czemu tutaj nie wlazi? zly warunek?
 			int tmpFrames = frames - (int)timeToSamples(sampleEnd - endTime);
 			byte[] tmpBuff = tip.getBytes(0, tmpFrames);
 			System.arraycopy(tmpBuff, 0, fetchBuffer, 0, tmpFrames);			
 		}
 	}
-
 	
 	/**
 	 * 
@@ -289,7 +289,7 @@ public class MainMixer {
 	
 	/**
 	 * 
-	 * @author <a href="mailto:pawel.mika@geomar.pl">Pawe� Mika</a>, Geomar SA
+	 * @author <a href="mailto:ketonal80@gmail.com">
 	 *
 	 */
 	protected class FetchedSampleData {

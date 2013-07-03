@@ -100,7 +100,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		setSize(256, 128);
 		setBackground(Color.WHITE);
 //		setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
-		
+
 		mf.getSpectrumAnalyzer().addSpectrumAnalyzerListener(this);
 				
 		popupMenu = new JPopupMenu("Menu");
@@ -170,6 +170,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private void paintLinear(Graphics g) {
 		if(drawType == DrawType.SUM) {
 			paintFullBandLinearSum(g);
+		} else if(drawType == DrawType.PER_CHANNEL) {
+			paintFullBandLinearSum(g);	//test!
 		}
 	}
 	
@@ -299,6 +301,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 				}
 			}
 			fftSumBuffer = sum;
+		} else if(drawType == DrawType.PER_CHANNEL) {
+			fftSumBuffer = e.getChannelFFTs()[0];
 		}
 		repaint();		
 	}
@@ -318,22 +322,22 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = fftSumBuffer[i] == 0 && fftSumBuffer[i + 1] == 0 ? 0 : (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
 			toPaint[c] = Decibels.linearToDecibels(toPaint[c]) / fftSize;
- 			toPaint[c] = (toPaint[c] / fft0dbValue) * getHeight();
+ 			toPaint[c] = Double.NEGATIVE_INFINITY == toPaint[c] ? 0 : (toPaint[c] / fft0dbValue) * getHeight();
 			c++;
 		}
 		
 		int barWidth = 1;
 		int fftIndex = 0, x = 0, y = 0;
 		for(int i = 0; i < toPaint.length; i ++) {
-			y  = getHeight() - (int)toPaint[fftIndex];
-			g2d.setColor(Color.BLUE);
+			y = getHeight() - (int)toPaint[fftIndex];
+			g2d.setColor(Color.gray);
 			g2d.drawLine(x, y, x, getHeight());
-			g2d.setColor(Color.red);
+			g2d.setColor(Color.blue);
 			g2d.drawLine(x, y, x, y);
 			fftIndex++;
 			x+=barWidth;
 		}		
 		g2d.dispose();
-		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_AREA_AVERAGING), 0, 0, null);
+		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_FAST), 0, 0, null);
 	}
 }

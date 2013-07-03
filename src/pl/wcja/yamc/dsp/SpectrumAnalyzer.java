@@ -113,7 +113,7 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 		//calculate max
 		double[] tmp = new double[fftSize];
 		for(int i = 0; i < tmp.length; i++) {
-			tmp[i] = Math.pow(2, audioFormat.getSampleSizeInBits() - 1) * (i % 2 == 0 ? 1 : -1);
+			tmp[i] = (Math.pow(2, audioFormat.getSampleSizeInBits() - 1) - 1) * (i % 2 == 0 ? 1 : -1);
 		}
 		fft.realForward(tmp);
 		fft0dbValue = (tmp[0] * tmp[0] + tmp[1] * tmp[1]);
