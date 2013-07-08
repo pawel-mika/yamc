@@ -1,11 +1,13 @@
 package pl.wcja.yamc.dsp;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import javax.sound.sampled.AudioFormat;
 
 import org.apache.log4j.Logger;
 
+import pl.wcja.yamc.debug.DebugConfig;
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
@@ -224,13 +226,22 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 		if(mixedBuffer.length >= byteBufSize) {
 			double buffer[] = null; 
 			double fftBuffers[][] = null;
-			
-			logger.info("**** mixed buf len: " + mixedBuffer.length + ", performing FFT analysis...");
 			buffer = SoundUtils.byteArrayToDoubleArray(mixedBuffer, 2, audioFormat.isBigEndian());
 			fftBuffers = SoundUtils.splitChannels(buffer, audioFormat.getChannels());
+
+			if(DebugConfig.getInstance().isDebugSpectrumAnalyzer()) {
+				logger.info("mixed bufer len: " + mixedBuffer.length + ", performing FFT analysis...");
+			}
+			
 			for(int c = 0; c < fftBuffers.length; c++) {
+//				if(DebugConfig.getInstance().isDebugSpectrumAnalyzer()) {
+//					logger.info(String.format("channel buffer: %s", Arrays.toString(fftBuffers[c])));
+//				}
 				fftBuffers[c] = SoundUtils.applyBlackmannHarrisWindow(fftBuffers[c]);
-				fft.realForward(fftBuffers[c]);	
+				fft.realForward(fftBuffers[c]);				
+//				if(DebugConfig.getInstance().isDebugSpectrumAnalyzer()) {
+//					logger.info(String.format("fft buffer: %s", Arrays.toString(fftBuffers[c])));
+//				}
 			}
 			fireSpectrumEvent(new SpectrumAnalyzerEvent(this, fftBuffers, fft0dbValue, barFrequencyWidth));
 			mixedBuffer = new byte[0];

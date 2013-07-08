@@ -110,4 +110,20 @@ public class WaveStream extends AbstractAudioStream {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public double[] getRMSSample(long fromIndex, long toIndex) {
+		double[] RMSSample = new double[audioFileFormat.getFormat().getChannels()];
+		double[] tmpSample;
+		for(long i = fromIndex; i < toIndex; i++) {
+			tmpSample = getSample(i);
+			for(int ci = 0; ci < audioFileFormat.getFormat().getChannels(); ci++) {
+				RMSSample[ci] += tmpSample[ci] * tmpSample[ci];
+			}
+		}
+		for(int ci = 0; ci < audioFileFormat.getFormat().getChannels(); ci++) {
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (toIndex - fromIndex));
+		}
+		return RMSSample;
+	}
 }

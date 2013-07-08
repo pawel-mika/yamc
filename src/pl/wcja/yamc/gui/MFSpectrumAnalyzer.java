@@ -229,7 +229,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
-			toPaint[c] = (10 * Math.log10(toPaint[c])) / fftSize;
+			toPaint[c] = (20 * Math.log10(toPaint[c])) / fftSize;
 //			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
 			toPaint[c] = (toPaint[c] * getHeight()) / fft0dbValue;
 			c++;

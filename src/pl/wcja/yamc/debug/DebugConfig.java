@@ -8,7 +8,16 @@ public final class DebugConfig {
 	private boolean debugCompleteFetch = true;
 	private boolean debugBufferMix = true;
 	private boolean debugTuneEditorGridDrawing = true;
+	private boolean debugSpectrumAnalyzer = true;
 	
+	public boolean isDebugSpectrumAnalyzer() {
+		return debugSpectrumAnalyzer;
+	}
+
+	public void setDebugSpectrumAnalyzer(boolean debugSpectrumAnalyzer) {
+		this.debugSpectrumAnalyzer = debugSpectrumAnalyzer;
+	}
+
 	public boolean isDebugTuneEditorGridDrawing() {
 		return debugTuneEditorGridDrawing;
 	}

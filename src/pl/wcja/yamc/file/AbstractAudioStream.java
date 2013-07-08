@@ -41,13 +41,22 @@ public abstract class AbstractAudioStream {
 	public abstract double[] getSample(long index);
 	
 	/**
+	 * Get a root mean square of stream's slice;
+	 * http://rosettacode.org/wiki/Averages/Root_mean_square
+	 * @param fromIndex
+	 * @param toIndex
+	 * @return
+	 */
+	public abstract double[] getRMSSample(long fromIndex, long toIndex);
+	
+	/**
 	 * Get the raw stream data without any conversions.
 	 * 
-	 * @param offset audio stream beginning offset
-	 * @param length lenght of data to get
+	 * @param sampleOffset audio stream beginning offset
+	 * @param sampleLength lenght of data to get
 	 * @return byte array of raw audio stream data
 	 */
-	public abstract byte[] getRawData(int offset, int length);
+	public abstract byte[] getRawData(int sampleOffset, int sampleLength);
 	
 	/**
 	 * Get the stream data converted to double values.

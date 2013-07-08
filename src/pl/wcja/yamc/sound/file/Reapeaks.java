@@ -5,12 +5,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 
+import pl.wcja.yamc.file.AbstractAudioStream;
 import pl.wcja.yamc.utils.SoundUtils;
 
 import com.sun.media.sound.WaveFileReader;
@@ -36,6 +38,7 @@ public class Reapeaks {
 	private int sourceFileSize = 0;
 	private List<Mipmap> mipmaps = new LinkedList<Reapeaks.Mipmap>();
 	private int versionMultiplier;
+	private int[] dividers = new int[] {44100, 4410, 110};
 		
 	/**
 	 * 
@@ -46,6 +49,21 @@ public class Reapeaks {
 		this.rpkf = reapeaksFile;
 		if(this.rpkf.length() > 0) {
 			this.readReapeaksFile();
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public Reapeaks(AbstractAudioStream aas) {
+		String name = aas.getFile().getName().split(".wav")[0];
+		name += ".reapeaks";
+		this.rpkf = new File(name);
+		try {
+			generateReapeaks(aas);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -113,32 +131,67 @@ public class Reapeaks {
 		bb.putInt(sourceLastModified);
 		bb.putInt(sourceFileSize);
 		raf.write(buf);
+		
+		//write mipmaps...
+		
+		raf.close();
 	}
 	
 	/**
 	 * Generates 
 	 * @throws Exception
 	 */
-	public void generateReapeaks(File waveFile, byte[] audioData) throws Exception {
+	public void generateReapeaks(AbstractAudioStream aas) throws Exception {
 		WaveFileReader wfr = new WaveFileReader();
-		AudioFileFormat aff = wfr.getAudioFileFormat(waveFile);
-//		AudioInputStream ais = wfr.getAudioInputStream(waveFile);
 		//setup header
-		header = "RPKN";
-		channels = aff.getFormat().getChannels();
-//		mipmapsCount
-		sourceSampleRate = (int)aff.getFormat().getSampleRate();
-		sourceLastModified = (int)waveFile.lastModified();
-		sourceFileSize = (int)waveFile.length();
-		
+		header = "RPKN"; //-> version multiplier = 2
+		versionMultiplier = 2;
+		channels = aas.getAudioFileFormat().getFormat().getChannels();
+		sourceSampleRate = (int)aas.getAudioFileFormat().getFormat().getSampleRate();
+		sourceLastModified = (int)aas.getFile().lastModified();
+		sourceFileSize = (int)aas.getFile().length();
+		mipmaps.clear();
+		for(int i = 0; i < dividers.length; i++) {
+			mipmaps.add(generateMipmap(aas, dividers[i]));
+		}
 		//at last - write the file
-		writeReapeaksFile();
+//		writeReapeaksFile();
 	}
 	
-	private Mipmap generateMipmap(AudioInputStream ais, int divisionFactor) {
-		short[] data = new short[(int)(ais.getFrameLength() / divisionFactor) * channels * versionMultiplier];
-
-		return null;//blah no power now;(
+	/**
+	 * 
+	 * @param aas
+	 * @param divisionFactor in frames (samples)
+	 * @return
+	 */
+	private Mipmap generateMipmap(AbstractAudioStream aas, int divisionFactor) {
+		int frameLength = aas.getAudioFileFormat().getFrameLength();
+		short[] data = new short[(int)(((frameLength / divisionFactor) + 1) * channels * versionMultiplier)];
+		int mipmapIdx = 0, srcIdx = 0, dstIdx = 0;
+		for(int i = 0; i < frameLength; i += divisionFactor) {
+			int toGet = frameLength - i > divisionFactor ?
+					divisionFactor :
+					frameLength - i;	
+			byte[] piece = aas.getRawData(i, toGet);
+			ShortBuffer shortBuffer = ByteBuffer.wrap(piece).asShortBuffer();
+			mipmapIdx = (i / divisionFactor) * channels * versionMultiplier;
+			//System.out.println(String.format("frameLenght: %s, i: %s, divFactor: %s, data.length: %s, mipmapidx: %s", frameLength, i, divisionFactor, data.length, mipmapIdx));
+			for(int j = 0; j < shortBuffer.limit(); j += channels) {
+				for(int c = 0; c < channels; c++) {
+					if(versionMultiplier == 1) {
+						srcIdx = j + c;
+						dstIdx = mipmapIdx + c;
+						data[dstIdx] = shortBuffer.get(srcIdx) > data[dstIdx] ? shortBuffer.get(srcIdx) : data[dstIdx];
+					} else if (versionMultiplier == 2) {
+						srcIdx = j + c;
+						dstIdx = mipmapIdx + (c * versionMultiplier);
+						data[dstIdx] = shortBuffer.get(srcIdx) > data[dstIdx] ? shortBuffer.get(srcIdx) : data[dstIdx];
+						data[dstIdx + 1] = shortBuffer.get(srcIdx) < data[dstIdx + 1] ? shortBuffer.get(srcIdx) : data[dstIdx + 1];
+					}
+				}
+			}
+		}
+		return new Mipmap(this, divisionFactor, data);
 	}
 	
 	public String getHeader() {
@@ -172,6 +225,10 @@ public class Reapeaks {
 	public List<Mipmap> getMipmaps() {
 		return mipmaps;
 	}
+	
+	public Mipmap getBestMipmapFor(double samplesPerPixel) {
+		return mipmaps.get(mipmaps.size() - 1);//temporaty for tests!
+	}
 
 	/**
 	 * 
@@ -191,12 +248,7 @@ public class Reapeaks {
 			this.peaks = data;
 			versionMultiplier = rpk.getHeader().equalsIgnoreCase("RPKM") ? 1 : 2;
 			countOfPeakSamples = data.length / (rpk.getChannels() * versionMultiplier);
-			
 		}
-//		
-//		public Mipmap(ByteBuffer header, ByteBuffer data) {
-//			
-//		}
 		
 		/**
 		 * 

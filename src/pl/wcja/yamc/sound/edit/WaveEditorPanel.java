@@ -15,6 +15,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -89,7 +90,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 
 	protected void initialize() {
 		setBackground(colorBackground);
-//		setFont(getFont().deriveFont(9.0f));
 		setFont(new Font("Tahoma", Font.PLAIN, 9));
 	}
 	
@@ -150,6 +150,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		frameSize = audioStream.getAudioFileFormat().getFormat().getFrameSize();
 		bytesPerChannel = frameSize / channels;
 		recalculateSamplesPerPixel();
+		
+		initReapeaks();
 		
 		//all ok - start listeners
 		addMouseListener(this);
@@ -241,34 +243,12 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	}	
 	
 	/**
-	 * <p>
-	 * Returns the sample in an array of doubles. The array size is equal to channel number.
-	 * double[chan1][chan2]...[chanN]
-	 * @param sampleNo
-	 * @return
-	 */
-//	private double[] getSample(double sampleNo) {
-//		double[] sample = new double[channels];
-//		byte[] frame = getSampleBytes(sampleNo);
-//		int idx = 0;
-//		for(int c = 0; c < channels; c++) {
-//			double value = 0;
-//			for(int b = 0; b < bytesPerChannel; b++) {
-//				value += (int)frame[idx] << (b * 8);
-//				idx++;
-//			}
-//			sample[c] = value;
-//		}
-//		return sample;
-//	}
-	
-	/**
 	 * Get a sample from reapeak mipmap
 	 * @param sampleNo
 	 * @return
 	 */
 	private double[] getReapeaksSample(double sampleNo) {
-		Mipmap mm = reapeaks.getMipmaps().get(0);
+		Mipmap mm = reapeaks.getMipmaps().get(reapeaks.getMipmaps().size() - 1);
 		double[] sample = new double[reapeaks.getChannels() * reapeaks.getVersionMultiplier()];
 		//translate sampleNo to reapeak mipmap sample number
 		int rsn = (int)(sampleNo / mm.getDivisionFactor());
@@ -278,25 +258,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 		return sample;
 	}
-	
-	/**
-	 * gets a normalized (0...1) sample magnitude from given sample
-	 * through the TODO!! normalize
-	 * @param sampleNo
-	 * @return
-	 */
-//	private double[] getNormalizedSampleMag(long sampleNo) {
-//		long sampleFrom = sampleNo;
-//		long sampleTo = sampleFrom + (int)samplesPerPixel;
-//		double[] avg = new double[channels];
-//		for(long s = sampleFrom; s < sampleTo; s+=avgMagQuantizer) {
-//			double[] d = getSample(s);
-//			for(int c = 0; c < channels; c++) {
-//				avg[c] += Math.abs(d[c]);// / samplesPerPixel; //OK
-//			}
-//		}
-//		return avg;
-//	}
 	
 	/* (non-Javadoc)
 	 * @see pl.wcja.sound.gui.WaveEditor#setMarkerLocation(double)
@@ -371,7 +332,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	@Override
 	public synchronized void paint(Graphics g) {
 		long paintTime = System.nanoTime();
-		//backround
+		//background
 		g.setColor(colorBackground);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		//childs + border etc
@@ -392,8 +353,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 				g.fillRect((int)x1, 0, w, getHeight());
 			}
 			//sample
-//			paintSampleMag(g);
-			paintAudioStream(g);
+			paintAudioStreamRMS(g);
 			//new way to paint sample 
 //			paintWaveform(g);
 			//marker
@@ -424,49 +384,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		txt = String.format("SamplePerPixel: %1.4f", samplesPerPixel);
 		g.drawString(txt, (int)(getWidth() - fm.getStringBounds(txt, g).getWidth() - 2), getHeight() - 2);
 	}
-	
-	/**
-	 * <p>
-	 * Draw the wave
-	 * 
-	 * @param g
-	 */
-//	private void paintSampleMag(Graphics g) {
-//		lastWidth = getWidth();
-//		lastHeight = getHeight();
-//		double channelHeight = (lastHeight / channels);
-//		Rectangle b = getBounds();
-//		//in case of this component bounds extends parent bounds we're
-//		//going to draw only the visible region to speed up drawing!
-//		Rectangle clipBounds = g.getClipBounds();
-//		int from = (int)clipBounds.getX();
-//		int to = from + (int)clipBounds.getWidth() - 1;
-//		if(debug) {
-//			System.out.println(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", waveFile.getName(), b.toString(), from, to, to - from, clipBounds));
-//		}
-//		for(int x = from; x < to; x++) {
-//			double fromSample = pixelToSample(x);
-//			double[] sampleMag = getNormalizedSampleMag((long)fromSample);
-//			sampleMag = SoundUtils.normalize(sampleMag, audioFileFormat.getFormat());
-//			for(int channel = 0; channel < channels; channel++) {
-//				double chnX = (channel * channelHeight) + (channelHeight / 2);
-//				g.setColor(colorGrid);
-//				g.drawLine(x, (int)chnX, x, (int)chnX);
-//				if(selection != null && fromSample >= selection.getSelectionStart() && fromSample <= selection.getSelectionEnd()) {
-//					g.setColor(colorBackground);
-//				} else {
-//					g.setColor(colorForeground);
-//				}
-//				double value = sampleMag[channel] * (channelHeight / samplesPerPixel) *  avgMagQuantizer;
-//				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
-//				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
-//			}
-//		}
-//	}
-	
-	//TODO: add a prerender of wave to a bitmap/png and then draw it properly on the panel
-	//instead of dynamic rendering
-	//Maybe use REAPEAKS? (http://www.reaper.fm/sdk/reapeaks.txt)
+
 	/**
 	 * 
 	 * @param g
@@ -479,9 +397,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		//in case of this component bounds extends parent bounds we're
 		//going to draw only the visible region to speed up drawing!
 		Rectangle clipBounds = g.getClipBounds();
-//		int from = (b.getX() < 0) ? (int)Math.abs(b.getX()) : 0;
-//		int to = from != 0 ? Math.abs(from) : 0;
-//		to += (b.getWidth() - from) > getParent().getWidth() ? getParent().getWidth() - 1 : (b.getWidth() - from) - 1;
 		int from = (int)clipBounds.getX();
 		int to = from + (int)clipBounds.getWidth();
 		if(debug) {
@@ -489,7 +404,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
-//			double[] sample = getSample((long)lts);
 			double[] sample = audioStream.getSample((long)lts);
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
@@ -507,7 +421,14 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 	}
 	
-	private void paintSampleAbsLines(Graphics g) {
+	//TODO: add a prerender of wave to a bitmap/png and then draw it properly on the panel instead of dynamic rendering
+	//Maybe use REAPEAKS? (http://www.reaper.fm/sdk/reapeaks.txt)
+	
+	/**
+	 * 
+	 * @param g
+	 */
+	private void paintAudioStreamRMS(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		lastWidth = getWidth();
@@ -522,11 +443,11 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		if(debug) {
 			logger.info(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
-		for(int x = from; x < to - 1; x++) {
+		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
-			double[] sample = audioStream.getSample((long)lts);
-			double[] samplen = audioStream.getSample((long)ltsn);
+			double[] sample = audioStream.getRMSSample((long)lts, (long)ltsn);
+//			double[] sample = getRMSMipmapSample((long)lts, (long)ltsn);
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
 				g.setColor(colorGrid);
@@ -537,8 +458,9 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 					g.setColor(colorForeground);
 				}
 				value = ((sample[channel] * channelHeight) / sampleResolution);
-				valuen = ((samplen[channel] * channelHeight) / sampleResolution);
-				g.drawLine(x, (int)(chnX - value), x + 1, (int)(chnX - valuen));
+				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
+				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
+
 			}
 		}
 	}
@@ -587,6 +509,41 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			//draw from real data
 			paintAudioStream(g);
 		}
+	}
+	
+	private void initReapeaks() {
+		reapeaks = new Reapeaks(audioStream);
+	}
+	
+	private double[] getMipmapSample(long fromFrame, long toFrame) {
+//		reapeaks.getMipmaps().
+		long visibleFrames = toFrame - fromFrame;
+		System.out.println(String.format("from:%s, to:%s, visibleFrames: %s", fromFrame, toFrame, visibleFrames));
+//		Mipmap m = reapeaks.getBestMipmapFor(0);
+		int multiplier = reapeaks.getChannels() * reapeaks.getVersionMultiplier();
+		double[] mmSamples = new double[(int)visibleFrames * multiplier];
+//		short[] buffer = new short[(int)visibleFrames * multiplier];
+		for(long i = fromFrame; i < toFrame; i++) {
+//			System.arraycopy(m.getPeak((int)i), 0, buffer,(int)(i - fromFrame) * multiplier, m.getPeak((int)i).length);
+			System.arraycopy(getReapeaksSample(i), 0, mmSamples, (int)(i - fromFrame) * multiplier, getReapeaksSample(i).length);
+		}
+//		SoundUtils.
+		return mmSamples;
+	}
+	
+	public double[] getRMSMipmapSample(long fromIndex, long toIndex) {
+		double[] RMSSample = new double[audioStream.getAudioFileFormat().getFormat().getChannels()];
+		double[] tmpSample;
+		for(long i = fromIndex; i < toIndex; i++) {
+			tmpSample = getReapeaksSample(i);
+			for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
+				RMSSample[ci] += tmpSample[ci] * tmpSample[ci];
+			}
+		}
+		for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (toIndex - fromIndex));
+		}
+		return RMSSample;
 	}
 	
 	@Override
