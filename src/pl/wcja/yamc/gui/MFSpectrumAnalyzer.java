@@ -96,6 +96,9 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		this.setToolTipText(String.format("Band width: %sHz",mf.getSpectrumAnalyzer().getBandWidth()));
 	}
 
+	/**
+	 * 
+	 */
 	private void initialize() {
 		setSize(256, 128);
 		setBackground(Color.WHITE);
@@ -175,7 +178,45 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		}
 	}
 	
+	/**
+	 * 
+	 * @param g
+	 */
 	private void paintLog(Graphics g) {
+		Image img = new BufferedImage(fftSize, getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)img.getGraphics();
+		
+		double[] toPaint = new double[fftSize];
+		int c = 0;
+		for(int i = 0; i < toPaint.length; i += 2) {
+			toPaint[c] = fftSumBuffer[i] == 0 && fftSumBuffer[i + 1] == 0 ? 0 : (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
+			toPaint[c] = Decibels.linearToDecibels(toPaint[c]) / fftSize;
+ 			toPaint[c] = Double.NEGATIVE_INFINITY == toPaint[c] ? 0 : (toPaint[c] / fft0dbValue) * getHeight();
+			c++;
+		}
+		
+		int fftIndex = 0, x = 0, y = 0;
+		int nextx = 0;
+		double scale = (toPaint.length / 2) / Math.log10(toPaint.length / 2);
+		for(int i = 0; i < toPaint.length; i++) {
+			y = getHeight() - (int)toPaint[fftIndex];
+			fftIndex++;
+			x = (int)(scale * Math.log10(i + 1)) * 2;
+			nextx = (int)(scale * Math.log10(i + 2)) * 2;
+			g2d.setColor(Color.gray);
+			g2d.fillRect(x, y, nextx - x + 1, getHeight());
+			g2d.setColor(Color.red);
+			g2d.drawLine(x, y, nextx, y);
+		}		
+		g2d.dispose();
+		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_FAST), 0, 0, null);
+	}
+	
+	/**
+	 * 
+	 * @param g
+	 */
+	private void paintLog_OLD(Graphics g) {
 		double[] toPaint = new double[fftSize];
 		int c = 0;
 		for(int i = 0; i < toPaint.length; i += 2) {
@@ -223,7 +264,10 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		}
 	}
 	
-	
+	/**
+	 * 
+	 * @param g
+	 */
 	private void paintLog2(Graphics g) {
 		double[] toPaint = new double[fftSize];
 		int c = 0;
