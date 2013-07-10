@@ -2,6 +2,7 @@ package pl.wcja.yamc.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -32,13 +33,16 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private int fftSize = 0;
 	private double[][] fftPerChannelBuffer = null;
 	private double[] fftSumBuffer = null;
-	private double fft0dbValue = 0;
-	private double fftDbMargin = 6;	//6db margin?
+//	private double fft0dbValue = 0;
+	private double dbUpperMargin = 6;		//6db margin?
+	private double dbUpperMarginHeight = 0;	
+	private int dbLabelMargin = 0;
 	private double bandWidth = 0;
 	private AudioFormat audioFormat = mf.getMixer().getMixAudioFormat();
 	private JPopupMenu popupMenu;
-	private double oneSecDraws = 0, avgOneSecFps = 0;
+	private double oneSecDraws = 0, avgOneSecFps = 0, targetOneSecFps = 25;
 	private long lastFpsCalcTime = 0;
+	private Image spectrumImage = null;
 
 	public enum ViewMode {
 		LINEAR("Linear", 0),
@@ -93,7 +97,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		super(mf);
 		initialize();
 		setPreferredSize(getMinimumSize());
-		this.setToolTipText(String.format("Band width: %sHz",mf.getSpectrumAnalyzer().getBandWidth()));
+		//this.setToolTipText(String.format("Band width: %sHz",mf.getSpectrumAnalyzer().getBandWidth()));
 	}
 
 	/**
@@ -102,8 +106,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private void initialize() {
 		setSize(256, 128);
 		setBackground(Color.WHITE);
-//		setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
-
+		setFont(new Font("Tahoma", Font.PLAIN, 10));
+		
 		mf.getSpectrumAnalyzer().addSpectrumAnalyzerListener(this);
 				
 		popupMenu = new JPopupMenu("Menu");
@@ -133,6 +137,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	@Override
 	public void paint(Graphics g) {
 //		super.paint(g);
+		g.setFont(getFont());
 		FontMetrics fm = g.getFontMetrics(); 
 		
 		g.setColor(getBackground());
@@ -141,8 +146,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		if(fftSumBuffer == null) {
 			return;
 		}
-		
-		fft0dbValue = (Decibels.linearToDecibels(2) / 2) * getHeight();
+
+		paintGrid(g);
 		
 		if(fftViewMode == ViewMode.LINEAR) {
 			paintLinear(g);
@@ -152,8 +157,6 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 			paintLog2(g);
 		}
 		
-		paintGrid(g);
-		
 		if(System.currentTimeMillis() - lastFpsCalcTime >= 1000) {
 			avgOneSecFps = (oneSecDraws / (System.currentTimeMillis() - lastFpsCalcTime)) * 1000;
 			logger.info("Average one second FPS: " + avgOneSecFps);
@@ -162,9 +165,14 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 		} else {
 			oneSecDraws++;
 		}
-		String sFps = String.format("avg 1 sec fps: %.2f", avgOneSecFps);
+
 		g.setColor(Color.green);
-		g.drawString(sFps, 0, getHeight() - fm.getDescent());
+		String sInfo = String.format("Avg 1 sec fps: %.2f", avgOneSecFps);
+		int sy = getHeight() - fm.getDescent();
+		g.drawString(sInfo, 1, sy);
+		sInfo = String.format("Band width: %.4f Hz", mf.getSpectrumAnalyzer().getBandWidth());
+		sy -= fm.getHeight();
+		g.drawString(sInfo, 1, sy);
 	}
 	
 	/**
@@ -186,16 +194,18 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private void paintGrid(Graphics g) {
 		FontMetrics fm = g.getFontMetrics();
 		//paint horizontal dB lines
-		g.setColor(Color.lightGray);
 		double scaley = getHeight() / mf.getSpectrumAnalyzer().getSNR(); 
 		int y = 0;
 		for(int i = 0; i <= mf.getSpectrumAnalyzer().getSNR(); i+= 10) {
-			String sdB = String.format("%s dB", i);
+			String sdB = String.format("%s dB", i > 0 ? -i : i);
 			int linedB = (int)(i  * scaley);
 			y = linedB;
-			g.drawLine(0, y, getWidth(), y);
-			g.drawString(sdB, getWidth() - fm.stringWidth(sdB), (int)(y + fm.getStringBounds(sdB, g).getHeight()));
-			
+			int stringWidth = fm.stringWidth(sdB);
+			g.setColor(Color.gray);
+			g.drawString(sdB, getWidth() - stringWidth, (int)(y - fm.getLineMetrics(sdB, g).getStrikethroughOffset()));
+			g.setColor(Color.lightGray);
+			g.drawLine(0, y, getWidth() - stringWidth - 2, y);
+			dbLabelMargin = dbLabelMargin < stringWidth ? stringWidth : dbLabelMargin;
 		}
 	}
 	
@@ -206,8 +216,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	 * @param g2d
 	 */
 	private void paintFullBandLinearSum(Graphics g) {
-		Image img = new BufferedImage(fftSize / 2, getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)img.getGraphics();
+		spectrumImage = new BufferedImage(fftSize / 2, getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)spectrumImage.getGraphics();
 		
 		double scaley = getHeight() / mf.getSpectrumAnalyzer().getDbMaxValue();
 		double[] toPaint = new double[fftSize];
@@ -231,7 +241,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 			x+=barWidth;
 		}		
 		g2d.dispose();
-		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_FAST), 0, 0, null);
+		g.drawImage(spectrumImage.getScaledInstance(getWidth() - dbLabelMargin, getHeight(), Image.SCALE_FAST), 0, 0, null);
 	}
 
 	/**
@@ -239,8 +249,8 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	 * @param g
 	 */
 	private void paintSpectrumLog(Graphics g) {
-		Image img = new BufferedImage(fftSize, getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)img.getGraphics();
+		spectrumImage = new BufferedImage(fftSize, getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)spectrumImage.getGraphics();
 		
 		double scaley = getHeight() / mf.getSpectrumAnalyzer().getDbMaxValue();
 		double[] toPaint = new double[fftSize];
@@ -266,7 +276,7 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 			g2d.drawLine(x, y, nextx, y);
 		}		
 		g2d.dispose();
-		g.drawImage(img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_FAST), 0, 0, null);
+		g.drawImage(spectrumImage.getScaledInstance(getWidth() - dbLabelMargin, getHeight(), Image.SCALE_FAST), 0, 0, null);
 	}
 	
 	/**
@@ -276,44 +286,61 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private void paintLog2(Graphics g) {
 		double[] toPaint = new double[fftSize];
 		int c = 0;
+		double scaley = getHeight() / mf.getSpectrumAnalyzer().getDbMaxValue();
 		for(int i = 0; i < toPaint.length; i += 2) {
 			toPaint[c] = (fftSumBuffer[i] * fftSumBuffer[i]) + (fftSumBuffer[i + 1] * fftSumBuffer[i + 1]);
-			toPaint[c] = (20 * Math.log10(toPaint[c])) / fftSize;
-//			toPaint[c] = (toPaint[c] / (fft0dbValue)) * getHeight();
-			toPaint[c] = (toPaint[c] * getHeight());// / fft0dbValue;
+			toPaint[c] = (20 * Math.log10(Math.sqrt(toPaint[c]))) / fftSize;
+			toPaint[c] = (toPaint[c] * scaley);
 			c++;
 		}
 		
-		int barWidth = getWidth() / (fftSize / 2);
-		if(barWidth <= 0) {
-			barWidth = 1;
-		}
-
-		Vector<Double> averaged = new Vector<Double>();
-		double avg = 0;
-		int j = 1;
-		for(int i = 0; i < toPaint.length; i+=j) {
-			for(int b = i; b < j + i; b++) {
-				if(b >= toPaint.length) {
-					break;
-				}
-				avg += toPaint[b];
-			}
-			avg /= (j + 1);
-			averaged.add(avg);
-			j++;
-		}
-
-		barWidth = getWidth() / (averaged.size() - 1);
-		int x = 0, y = 0;
-		for(int i = 0; i < averaged.size(); i ++) {
-			y  = getHeight() - averaged.get(i).intValue();
-			g.setColor(Color.BLUE);
-			g.fillRect(x, y, barWidth - 1, getHeight());
-			g.setColor(Color.red);
-			g.drawLine(x, y, x + barWidth - 2, y);
-			x+=barWidth;
-		}
+//		int barWidth = getWidth() / (fftSize / 2);
+//		if(barWidth <= 0) {
+//			barWidth = 1;
+//		}
+//
+//		Vector<Double> averaged = new Vector<Double>();
+//		double avg = 0;
+//		int j = 1;
+//		for(int i = 0; i < toPaint.length; i+=j) {
+//			for(int b = i; b < j + i; b++) {
+//				if(b >= toPaint.length) {
+//					break;
+//				}
+//				avg += toPaint[b];
+//			}
+//			avg /= (j + 1);
+//			averaged.add(avg);
+//			j++;
+//		}
+//
+//		barWidth = getWidth() / (averaged.size() - 1);
+//		int x = 0, y = 0;
+//		for(int i = 0; i < averaged.size(); i ++) {
+//			y  = getHeight() - averaged.get(i).intValue();
+//			g.setColor(Color.BLUE);
+//			g.fillRect(x, y, barWidth - 1, getHeight());
+//			g.setColor(Color.red);
+//			g.drawLine(x, y, x + barWidth - 2, y);
+//			x+=barWidth;
+//		}
+		Vector<Double> averaged = new Vector<>();
+		int fftIndex = 0, x = 0, y = 0, ai = 0;
+		int nextx = 0;
+		double scale = (toPaint.length / 2) / Math.log10(toPaint.length / 2);
+		for(int i = 0; i < toPaint.length; i++) {
+			y = getHeight() - (int)toPaint[fftIndex];
+			fftIndex++;
+			x = (int)(scale * Math.log10(i + 1)) * 2;
+			nextx = (int)(scale * Math.log10(i + 2)) * 2;
+			
+			
+			
+//			g2d.setColor(Color.gray);
+//			g2d.fillRect(x, y, nextx - x + 1, getHeight());
+//			g2d.setColor(Color.red);
+//			g2d.drawLine(x, y, nextx, y);
+		}	
 	}
 	
 	private int freqToIndex(int freq) {
