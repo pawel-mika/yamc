@@ -12,13 +12,11 @@ public class SpectrumAnalyzerEvent extends EventObject {
 	
 	private static final long serialVersionUID = 2081582814746724690L;
 	double[][] channelFFTs = null;
-	double fft0dbValue = 0;
 	double barFrequencyWidth = 0;
-	
-	public SpectrumAnalyzerEvent(Object source, double[][] channelFFTs, double fft0dbValue, double barWidth) {
+		
+	public SpectrumAnalyzerEvent(Object source, double[][] channelFFTs, double barWidth) {
 		super(source);
 		this.channelFFTs = channelFFTs;
-		this.fft0dbValue = fft0dbValue;
 		this.barFrequencyWidth = barWidth;
 	}
 
@@ -28,9 +26,5 @@ public class SpectrumAnalyzerEvent extends EventObject {
 	
 	public double getBarFrequencyWidth() {
 		return barFrequencyWidth;
-	}
-	
-	public double getFft0dbValue() {
-		return fft0dbValue;
 	}
 }

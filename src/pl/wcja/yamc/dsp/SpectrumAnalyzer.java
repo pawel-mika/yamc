@@ -37,7 +37,8 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	private int byteBufSize = 0;
 	private byte[] mixedBuffer = new byte[0];
 	private double barFrequencyWidth = 0;
-	private double fft0dbValue = 0;
+	private double dbMaxValue = 0;
+	private double SNR = 0;	//signal to noise ratio, i.e.: for 16bit signal it's ~= 96dB
 	private DoubleFFT_1D fft = null;
 	private Thread analyzerThread = null;
 	private AnalyzerRunnable analyzerRunnable = null;
@@ -112,23 +113,20 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 	
 	private void setupAnalyzer() {
 		fft = new DoubleFFT_1D(fftSize);
+		//calculate SNR
+		SNR = Decibels.linearToDecibels(Math.pow(2, audioFormat.getSampleSizeInBits()));
 		//calculate max
 		double[] tmp = new double[fftSize];
 		for(int i = 0; i < tmp.length; i++) {
 			tmp[i] = (Math.pow(2, audioFormat.getSampleSizeInBits() - 1) - 1) * (i % 2 == 0 ? 1 : -1);
 		}
 		fft.realForward(tmp);
-		fft0dbValue = (tmp[0] * tmp[0] + tmp[1] * tmp[1]);
-//		fft0dbValue = (10 * Math.log10(fft0dbValue))  / tmp.length;
-		fft0dbValue = Decibels.linearToDecibels(fft0dbValue) / tmp.length;
+		dbMaxValue = Math.sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1]);
+		dbMaxValue = Decibels.linearToDecibels(dbMaxValue) / tmp.length;
 	}
 	
 	private void startAnalyzer() {
 		setupAnalyzer();
-//		analyzerRunnable = new AnalyzerRunnable();
-//		analyzerThread = new Thread(analyzerRunnable);
-//		analyzerThread.setPriority(Thread.NORM_PRIORITY);
-//		analyzerThread.start();
 	}
 	
 	private void stopAnalyzer() {
@@ -144,11 +142,35 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 		
 	}
 
+	/**
+	 * return the band width in Hz
+	 * @return
+	 */
 	public double getBandWidth() {
-//		return (audioFormat.getSampleRate() / 2) / fftSize;
 		return audioFormat.getSampleRate() / fftSize;
 	}
 	
+	/**
+	 * 
+	 * @return signal to noise ratio
+	 */
+	public double getSNR() {
+		return this.SNR;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public double getDbMaxValue() {
+		return dbMaxValue;
+	}
+	
+	/**
+	 * 
+	 * @param freq
+	 * @return
+	 */
 	public int freqToIndex(int freq) {
 		// special case: freq is lower than the bandwidth of spectrum[0]
 		if (freq < getBandWidth() / 2)
@@ -234,16 +256,10 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 			}
 			
 			for(int c = 0; c < fftBuffers.length; c++) {
-//				if(DebugConfig.getInstance().isDebugSpectrumAnalyzer()) {
-//					logger.info(String.format("channel buffer: %s", Arrays.toString(fftBuffers[c])));
-//				}
 				fftBuffers[c] = SoundUtils.applyBlackmannHarrisWindow(fftBuffers[c]);
 				fft.realForward(fftBuffers[c]);				
-//				if(DebugConfig.getInstance().isDebugSpectrumAnalyzer()) {
-//					logger.info(String.format("fft buffer: %s", Arrays.toString(fftBuffers[c])));
-//				}
 			}
-			fireSpectrumEvent(new SpectrumAnalyzerEvent(this, fftBuffers, fft0dbValue, barFrequencyWidth));
+			fireSpectrumEvent(new SpectrumAnalyzerEvent(this, fftBuffers, barFrequencyWidth));
 			mixedBuffer = new byte[0];
 		}
 	}

@@ -88,12 +88,13 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 		if(fftChannelPower == null) {
 			return;
 		}
-		
+		double scaley = getHeight() / mf.getSpectrumAnalyzer().getDbMaxValue();
+		double scalex = getWidth() / mf.getSpectrumAnalyzer().getDbMaxValue();
 		if(direction == Direction.VERTICAL) {
 			int barWidth = getWidth() / fftChannelPower.length;
 			int x = 0, y = 0;
 			for(int i = 0; i < fftChannelPower.length; i++) {
-				y  = (int)(getHeight() - (fftChannelPower[i] / (fft0dbValue)) * getHeight());
+				y  = (int)(getHeight() - (fftChannelPower[i] * scaley));
 				g.setColor(Color.BLUE);
 				g.fillRect(x, y, barWidth - 1, getHeight());
 				g.setColor(Color.red);
@@ -105,7 +106,7 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 			int barWidth = 0, y = 0;
 			int zerodB = getWidth() - (int)(getWidth() * fft0dbValue);
 			for(int i = 0; i < fftChannelPower.length; i++) {
-				barWidth = (int)((fftChannelPower[i] * getWidth()) / fft0dbValue);
+				barWidth = (int)((fftChannelPower[i] * scalex));
 				g.setColor(Color.GRAY);
 				g.drawLine(zerodB, y, zerodB, y + barHeight - 2);
 				g.setColor(Color.BLUE);
@@ -119,7 +120,6 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 	
 	@Override
 	public void spectrumCalculated(SpectrumAnalyzerEvent e) {
-		fft0dbValue = e.getFft0dbValue();
 		fftSize = e.getChannelFFTs()[0].length;
 		fftChannelPower = new double[e.getChannelFFTs().length];
 		double dNumber = 0;
@@ -133,7 +133,7 @@ public class ChannelPowerMeter extends MFPanel implements SpectrumAnalyzerListen
 			}
 		}
 		for(int i = 0; i < fftChannelPower.length; i++) {
-			fftChannelPower[i] = Decibels.linearToDecibels(fftChannelPower[i]) / fftSize;
+			fftChannelPower[i] = Decibels.linearToDecibels(Math.sqrt(fftChannelPower[i])) / fftSize;
 		}
 		repaint();
 	}
