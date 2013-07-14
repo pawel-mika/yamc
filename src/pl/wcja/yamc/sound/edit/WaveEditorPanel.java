@@ -450,10 +450,15 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		if(debug) {
 			logger.info(String.format("%s: %s, drawing: %s - %s (=%s)px; clip: %s", audioStream.getFile().getName(), b.toString(), from, to, to - from, clipBounds));
 		}
+		double[] sample;
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
-			double[] sample = audioStream.getRMSSample((long)lts, (long)ltsn);
+			if((int)lts != (int)ltsn) {
+				sample = audioStream.getRMSSample((long)lts, (long)ltsn);	
+			} else {
+				sample = audioStream.getSample((long)lts);
+			}			
 			for(int channel = 0; channel < channels; channel++) {
 				double chnX = (channel * channelHeight) + (channelHeight / 2);
 				g.setColor(colorGrid);
