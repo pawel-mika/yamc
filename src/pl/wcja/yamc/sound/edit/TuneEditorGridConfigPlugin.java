@@ -5,7 +5,7 @@ import pl.wcja.yamc.plugin.MenuEntryPlugin;
 
 /**
  * 
- * @author <a href="mailto:pawel.mika@geomar.pl">Pawe³ Mika</a>, Geomar SA
+ * @author ketonal80
  *
  */
 public class TuneEditorGridConfigPlugin extends MenuEntryPlugin {

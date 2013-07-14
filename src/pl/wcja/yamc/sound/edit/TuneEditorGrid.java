@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
 import pl.wcja.yamc.debug.DebugConfig;
 import pl.wcja.yamc.frame.Configurable;
 import pl.wcja.yamc.frame.IMainFrame;
+import pl.wcja.yamc.gui.MFOkCancelDialog;
 import pl.wcja.yamc.gui.MFProgressDialog;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.Track;
@@ -994,7 +995,7 @@ public class TuneEditorGrid extends JComponent
 	
 	@Override
 	public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-		popupMenu.removeAll();
+		popupMenu.removeAll();	//move popup menu building to another class?
 		final Track t = getTrackAt(getMousePosition());
 		final Collection<TrackItemPanel> tipl = getTrackItemPanelsAt(getMousePosition());
 		if(tipl != null && !tipl.isEmpty()) {
@@ -1010,6 +1011,34 @@ public class TuneEditorGrid extends JComponent
 					@Override
 					public void actionPerformed(ActionEvent paramActionEvent) {
 						DialogUtils.showTrackItemPanelDialog(mf, tipl.iterator().next());
+					}
+				});
+				popupMenu.add(new AbstractAction("Edit...") {
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						TrackItemPanel item = tipl.iterator().next();
+						if(item == null || item.getWaveFile() == null) {
+							this.setEnabled(false);
+							return;
+						}
+						MFOkCancelDialog d = new MFOkCancelDialog(mf) {
+							@Override
+							protected void okClicked() {
+							}
+							@Override
+							protected void cancelCliked() {
+							}
+						};
+						WaveEditorPanel wep = new WaveEditorPanel();
+						try {
+							wep.setWaveFile(item.getWaveFile());
+						} catch (UnsupportedAudioFileException | IOException e) {
+							e.printStackTrace();
+						}
+						d.add(wep);
+						d.pack();
+						DialogUtils.centerScreenDialog(d);
+						d.setVisible(true);
 					}
 				});
 			}

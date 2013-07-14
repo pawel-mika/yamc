@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
 
 import pl.wcja.yamc.dsp.MainMixer;
 import pl.wcja.yamc.event.BufferMixedEvent;
@@ -53,6 +54,7 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 	private JPanel jpMixer = new JPanel(new FlowLayout(FlowLayout.LEFT));
 	private JButton jbPlay = new JButton("Play");
 	private JButton jbStop = new JButton("Stop");
+	private JToggleButton jtbLoop = new JToggleButton("Loop");
 	
 	public MFMixerPanel(IMainFrame mf) {
 		super(mf);
@@ -72,6 +74,7 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 		});
 		jpMixer.add(jbPlay);
 		jpMixer.add(jbStop);
+		jpMixer.add(jtbLoop);
 	}
 
 	@Override
