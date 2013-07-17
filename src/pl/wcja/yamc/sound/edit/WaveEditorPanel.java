@@ -15,12 +15,10 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 
@@ -30,11 +28,7 @@ import pl.wcja.yamc.file.AbstractAudioStream;
 import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
-import pl.wcja.yamc.sound.file.YamcPeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
-import pl.wcja.yamc.utils.SoundUtils;
-
-import com.sun.media.sound.WaveFileReader;
 
 /**
  * 
@@ -51,7 +45,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private boolean info = true;
 	private AbstractAudioStream audioStream = null;
 	protected Reapeaks reapeaks = null;
-	protected YamcPeaks yamcPeaks = null;
 	
 	protected int channels = 0, frameSize = 0, bytesPerChannel = 0, sampleResolution = 0;
 	protected long totalSamples = 0;
@@ -245,97 +238,14 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	}	
 	
 	/**
-	 * Get a sample from reapeak mipmap
-	 * @param sampleNo
+	 * 
 	 * @return
 	 */
-	private double[] getReapeaksSample(double sampleNo) {
-		Mipmap mm = getBestMipmap();
-		double[] sample = new double[reapeaks.getChannels() * reapeaks.getVersionMultiplier()];
-		//translate sampleNo to reapeak mipmap sample number
-		int rsn = (int)(sampleNo / mm.getDivisionFactor());
-		short[] peak = mm.getPeak(rsn);
-		for(int i = 0; i < peak.length; i++) {
-			sample[i] = peak[i];
-		}
-		return sample;
-	}
-	
 	private Mipmap getBestMipmap() {
-		System.out.println("samples per pixel: " + samplesPerPixel);
-		return reapeaks.getMipmaps().get(reapeaks.getMipmaps().size() - 1);
+		Mipmap m = reapeaks.getBestMipmapFor(samplesPerPixel);
+		return m;
 	}
 	
-	/* (non-Javadoc)
-	 * @see pl.wcja.sound.gui.WaveEditor#setMarkerLocation(double)
-	 */
-	@Override
-	public void setMarkerLocation(double sample) {
-		this.markerLocationSample = (long)sample;
-		fireMarkerLocationChangedEvent(new MarkerLocationChangedEvent(this, markerLocationSample, Unit.SAMPLE));
-		repaint();
-	}
-	
-	/* (non-Javadoc)
-	 * @see pl.wcja.sound.gui.WaveEditor#clearSelection()
-	 */
-	@Override
-	public void clearSelection() {
-		setSelection(null);
-		lastSelection = null;
-		selectionEditMode = SELECTION_EDIT_MODE.EDIT_NONE;
-	}
-	
-	/* (non-Javadoc)
-	 * @see pl.wcja.sound.gui.WaveEditor#setSelection(pl.wcja.sound.gui.Selection)
-	 */
-	@Override
-	public void setSelection(Selection selection) {
-		if(selection == null) {
-			this.selection = null;
-			repaint();
-			return;
-		}
-		if(selection.getSelectionStart() <= selection.getSelectionEnd() && selection.getSelectionStart() >= 0 && selection.getSelectionEnd() <= totalSamples) {
-			this.selection = selection;
-			repaint();
-		}
-	}
-		
-	/**
-	 * <p>
-	 * Moves view to specified sample at current samplePerPixel ratio
-	 * if the calculated endSample at the current SPP extends totalSamples 
-	 * the endSample is set to lastSample and the SPP is recalculated
-	 * 
-	 * @param sample
-	 */
-	public void moveTo(double sample) {
-		//TODO to be implemented... or not...
-	}
-	
-	/* (non-Javadoc)
-	 * @see pl.wcja.sound.gui.WaveEditor#pan(double, double)
-	 */
-	@Override
-	public void pan(double sampleStart, double sampleEnd) {
-		if(sampleEnd > sampleStart && sampleStart >= 0 && sampleEnd <= totalSamples) {
-			viewFromFrame = sampleStart;
-			viewToFrame = sampleEnd;
-			recalculateSamplesPerPixel();
-			fireVisibleAreaChangedEvent(new VisibleAreaChangedEvent(this, viewFromFrame, viewToFrame, Unit.SAMPLE));
-			repaint();
-		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see pl.wcja.sound.gui.WaveEditor#getTotalSecondLength()
-	 */
-	@Override
-	public double getTotalSecondLength() {
-		return audioStream.getAudioFileFormat().getFrameLength() / audioStream.getAudioFileFormat().getFormat().getSampleRate();
-	}
-
 	@Override
 	public synchronized void paint(Graphics g) {
 		long paintTime = System.nanoTime();
@@ -361,8 +271,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			}
 			//sample
 			paintAudioStreamRMS(g);
-			//new way to paint sample 
-//			paintWaveform(g);
 			//marker
 			g.setColor(colorMarker);
 			g.drawLine((int)sampleToPixel(markerLocationSample), 0, (int)sampleToPixel(markerLocationSample), getHeight());
@@ -438,6 +346,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private void paintAudioStreamRMS(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		lastWidth = getWidth();
 		lastHeight = getHeight();
 		double channelHeight = (lastHeight / channels);
@@ -455,7 +364,11 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
 			if((int)lts != (int)ltsn) {
-				sample = audioStream.getRMSSample((long)lts, (long)ltsn);	
+				if(getBestMipmap() != null) {
+					sample = getRMSMipmapSample((long)lts, (long)ltsn);
+				} else {
+					sample = audioStream.getRMSSample((long)lts, (long)ltsn);	
+				}
 			} else {
 				sample = audioStream.getSample((long)lts);
 			}			
@@ -482,6 +395,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 * real data depending of samplesPerPixel ratio.
 	 * @param g
 	 */
+	@Deprecated
 	private void paintWaveform(Graphics g) {
 		lastWidth = getWidth();
 		lastHeight = getHeight();
@@ -509,11 +423,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 					}
 					valuemin = ((sample[channel * 2] * channelHeight) / sampleResolution);
 					valuemax = ((sample[channel * 2 + 1] * channelHeight) / sampleResolution);
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
 					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemax));
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemin));
-					
 				}
 			}			
 		} else {
@@ -522,26 +432,29 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 	}
 	
-	private void initReapeaks() {
+	private void initReapeaks() throws IOException  {
 		reapeaks = new Reapeaks(audioStream);
 	}
-	
-	private double[] getMipmapSample(long fromFrame, long toFrame) {
-		long visibleFrames = toFrame - fromFrame;
-		System.out.println(String.format("from:%s, to:%s, visibleFrames: %s", fromFrame, toFrame, visibleFrames));
-		int multiplier = reapeaks.getChannels() * reapeaks.getVersionMultiplier();
-		double[] mmSamples = new double[(int)visibleFrames * multiplier];
-//		short[] buffer = new short[(int)visibleFrames * multiplier];
-		for(long i = fromFrame; i < toFrame; i++) {
-//			System.arraycopy(m.getPeak((int)i), 0, buffer,(int)(i - fromFrame) * multiplier, m.getPeak((int)i).length);
-			System.arraycopy(getReapeaksSample(i), 0, mmSamples, (int)(i - fromFrame) * multiplier, getReapeaksSample(i).length);
-		}
-//		SoundUtils.
-		return mmSamples;
-	}
-	
+		
 	/**
-	 * 
+	 * Get a sample from reapeak mipmap
+	 * @param sampleNo
+	 * @return
+	 */
+	private double[] getReapeaksSample(double sampleNo) {
+		Mipmap mm = getBestMipmap();
+		double[] sample = new double[reapeaks.getChannels() * reapeaks.getVersionMultiplier()];
+		//translate sampleNo to reapeak mipmap sample number
+		int rsn = (int)(sampleNo / mm.getDivisionFactor());
+		short[] peak = mm.getPeak(rsn);
+		for(int i = 0; i < peak.length; i++) {
+			sample[i] = peak[i];
+		}
+		return sample;
+	}
+
+	/**
+	 * Get a RMS samples from a generated mipmap 
 	 * @param fromIndex
 	 * @param toIndex
 	 * @return
@@ -550,20 +463,95 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		double[] RMSSample = new double[audioStream.getAudioFileFormat().getFormat().getChannels()];
 		double[] tmpSample;
 		Mipmap mm = getBestMipmap();
-//		int fromReapeakSample = (int)(fromIndex / mm.getDivisionFactor());
-//		int toReapeakSample = (int)(toIndex / mm.getDivisionFactor());
+		double peakCount = Math.ceil((toIndex - fromIndex) / (double)mm.getDivisionFactor());
+//		if(mm != null) {
+//			System.out.println(String.format(
+//					"samples per pixel: %s, get from %s to %s / mipmap divider: %s = %s", samplesPerPixel, 
+//					fromIndex, toIndex, mm.getDivisionFactor(), peakCount));	
+//		}
 		for(long i = fromIndex; i < toIndex; i+=mm.getDivisionFactor()) {
 			tmpSample = getReapeaksSample(i);
 			for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-				RMSSample[ci] += tmpSample[ci] * tmpSample[ci];
+				RMSSample[ci] += tmpSample[ci * reapeaks.getVersionMultiplier()] * tmpSample[ci * reapeaks.getVersionMultiplier()];
+				RMSSample[ci] += tmpSample[(ci  * reapeaks.getVersionMultiplier()) + 1] * tmpSample[(ci  * reapeaks.getVersionMultiplier()) + 1];
 			}
 		}
 		for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-			RMSSample[ci] = Math.sqrt(RMSSample[ci] / ( mm.getDivisionFactor()));
+			RMSSample[ci] = (Math.sqrt(RMSSample[ci] / (peakCount * 4)));
 		}
 		return RMSSample;
 	}
 	
+	/* (non-Javadoc)
+	 * @see pl.wcja.sound.gui.WaveEditor#setMarkerLocation(double)
+	 */
+	@Override
+	public void setMarkerLocation(double sample) {
+		this.markerLocationSample = (long)sample;
+		fireMarkerLocationChangedEvent(new MarkerLocationChangedEvent(this, markerLocationSample, Unit.SAMPLE));
+		repaint();
+	}
+
+	/* (non-Javadoc)
+	 * @see pl.wcja.sound.gui.WaveEditor#clearSelection()
+	 */
+	@Override
+	public void clearSelection() {
+		setSelection(null);
+		lastSelection = null;
+		selectionEditMode = SELECTION_EDIT_MODE.EDIT_NONE;
+	}
+
+	/* (non-Javadoc)
+	 * @see pl.wcja.sound.gui.WaveEditor#setSelection(pl.wcja.sound.gui.Selection)
+	 */
+	@Override
+	public void setSelection(Selection selection) {
+		if(selection == null) {
+			this.selection = null;
+			repaint();
+			return;
+		}
+		if(selection.getSelectionStart() <= selection.getSelectionEnd() && selection.getSelectionStart() >= 0 && selection.getSelectionEnd() <= totalSamples) {
+			this.selection = selection;
+			repaint();
+		}
+	}
+
+	/**
+	 * <p>
+	 * Moves view to specified sample at current samplePerPixel ratio
+	 * if the calculated endSample at the current SPP extends totalSamples 
+	 * the endSample is set to lastSample and the SPP is recalculated
+	 * 
+	 * @param sample
+	 */
+	public void moveTo(double sample) {
+		//TODO to be implemented... or not...
+	}
+
+	/* (non-Javadoc)
+	 * @see pl.wcja.sound.gui.WaveEditor#pan(double, double)
+	 */
+	@Override
+	public void pan(double sampleStart, double sampleEnd) {
+		if(sampleEnd > sampleStart && sampleStart >= 0 && sampleEnd <= totalSamples) {
+			viewFromFrame = sampleStart;
+			viewToFrame = sampleEnd;
+			recalculateSamplesPerPixel();
+			fireVisibleAreaChangedEvent(new VisibleAreaChangedEvent(this, viewFromFrame, viewToFrame, Unit.SAMPLE));
+			repaint();
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see pl.wcja.sound.gui.WaveEditor#getTotalSecondLength()
+	 */
+	@Override
+	public double getTotalSecondLength() {
+		return audioStream.getAudioFileFormat().getFrameLength() / audioStream.getAudioFileFormat().getFormat().getSampleRate();
+	}
+
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		int v = e.getWheelRotation();
