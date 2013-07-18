@@ -2,6 +2,7 @@ package pl.wcja.yamc.sound.edit;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -1077,6 +1078,7 @@ public class TuneEditorGrid extends JComponent
 						WaveEditorPanel wep = new WaveEditorPanel();
 						try {
 							wep.setWaveFile(item.getWaveFile());
+							wep.setPreferredSize(new Dimension(400, 200));
 						} catch (UnsupportedAudioFileException | IOException e) {
 							e.printStackTrace();
 						}

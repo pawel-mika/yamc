@@ -58,7 +58,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 	public MainFrame() {
 		super();
 		initMainFrame();
-		initTestToolbarButtons(); //REMOVE LATER...
+//		initTestToolbarButtons(); //REMOVE LATER...
 		addWindowListener(this);
 		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 	}
@@ -68,9 +68,11 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		
 		DialogUtils.centerScreenDialog(this);
 
+		//TODO maybe move this to some kind of automatic menu build process?
 		mfMenuBar = new MFMenuBar(this);
 		mfMenuBar.add(new JMenu("File"));
 		mfMenuBar.add(new JMenu("Edit"));
+		mfMenuBar.add(new JMenu("Tools"));
 		mfMenuBar.add(new JMenu("View"));
 		mfMenuBar.add(new JMenu("Help"));
 		setJMenuBar(mfMenuBar);		

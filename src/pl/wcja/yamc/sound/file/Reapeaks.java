@@ -14,11 +14,12 @@ import org.apache.log4j.Logger;
 
 import pl.wcja.yamc.file.AbstractAudioStream;
 
-import com.sun.media.sound.WaveFileReader;
-
 /**
+ * Reapeaks file implementation.
  * According to:
  * http://www.reaper.fm/sdk/reapeaks.txt
+ * 
+ * (Be careful with byte order!)
  * 
  * @author:		<a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
  * @date:		08-02-2012
@@ -41,6 +42,8 @@ public class Reapeaks {
 	private int[] dividers = new int[] {110, 4410, 44100};
 		
 	/**
+	 * Creates a reapeaks object from given reapeaks file.
+	 * Reads and parses the data in file.
 	 * 
 	 * @param reapeaksFile
 	 * @throws IOException 
@@ -54,6 +57,11 @@ public class Reapeaks {
 	}
 	
 	/**
+	 * Creates a reapeaks file from an *audio* stream.
+	 * Parses the stream and generates mipmap files.
+	 * After generating is completed it writes the file to the
+	 * disk to it can be used (readed) later without parsing again.
+	 *  
 	 * @throws IOException 
 	 * @throws Exception 
 	 * 
@@ -73,6 +81,8 @@ public class Reapeaks {
 	}
 	
 	/**
+	 * Set differend reapeak file to this object.
+	 * (do we really need this?)
 	 * 
 	 * @param rpkf
 	 * @throws IOException 
@@ -86,7 +96,10 @@ public class Reapeaks {
 	}
 
 	/**
-	 * 
+	 * Parse the reapeaks file.
+	 * Open the stream, analyze and read the file.
+	 * Read and create mipmaps also.
+	 *  
 	 * @throws IOException 
 	 * @throws Exception
 	 */
@@ -123,6 +136,8 @@ public class Reapeaks {
 	}
 	
 	/**
+	 * Write the reapeaks file (including mipmaps) to 
+	 * the disk and close the file.
 	 * 
 	 * @throws Exception
 	 */
@@ -163,7 +178,9 @@ public class Reapeaks {
 	}
 	
 	/**
-	 * Generates 
+	 * Generates the peaks/mipmaps from given audio stream
+	 * considering the dividers.
+	 * 
 	 * @throws Exception
 	 */
 	public void generateReapeaks(AbstractAudioStream aas) throws IOException {
@@ -182,6 +199,7 @@ public class Reapeaks {
 	}
 	
 	/**
+	 * Generate a mipmap from audio stream with a division factor given.
 	 * 
 	 * @param aas
 	 * @param divisionFactor in frames (samples)
@@ -225,38 +243,75 @@ public class Reapeaks {
 		return new Mipmap(this, divisionFactor, data);
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public String getHeader() {
 		return header;
 	}
 
+	/**
+	 * Returns number of channels
+	 * @return
+	 */
 	public int getChannels() {
 		return channels;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public int getMipmapsCount() {
 		return mipmapsCount;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public int getSourceSampleRate() {
 		return sourceSampleRate;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public int getSourceLastModified() {
 		return sourceLastModified;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public int getSourceFileSize() {
 		return sourceFileSize;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public int getVersionMultiplier() {
 		return versionMultiplier;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public List<Mipmap> getMipmaps() {
 		return mipmaps;
 	}
 	
+	/**
+	 * 
+	 * @param samplesPerPixel
+	 * @return
+	 */
 	public Mipmap getBestMipmapFor(double samplesPerPixel) {
 		Mipmap toReturn = null;
 		for(Mipmap m : mipmaps) {
@@ -268,20 +323,7 @@ public class Reapeaks {
 	}
 	
 	/**
-	 * 
-	 * @param divider
-	 * @return
-	 */
-	private Mipmap getMipmapFor(int divider) {
-		for(Mipmap m : mipmaps) {
-			if(m.divisionFactor == divider) {
-				return m;
-			}
-		}
-		return null;
-	}
-
-	/**
+	 * Mipmap data object
 	 * 
 	 * @author:		<a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
 	 * @date:		08-02-2012
@@ -293,6 +335,12 @@ public class Reapeaks {
 		private int countOfPeakSamples = 0;
 		private short[] peaks = null;
 		
+		/**
+		 * 
+		 * @param rpk
+		 * @param divisionFactor
+		 * @param data
+		 */
 		public Mipmap(Reapeaks rpk, int divisionFactor, short[] data) {
 			this.rpk = rpk;
 			this.divisionFactor = divisionFactor;
@@ -304,11 +352,10 @@ public class Reapeaks {
 		/**
 		 * 
 		 * @param rpk Reapeaks object that Mipmap belongs to
-		 * @param rpkf 
+		 * @param rpkf
 		 * @param headerStart
 		 * @param dataStart
-		 * @throws IOException 
-		 * @throws Exception
+		 * @throws IOException
 		 */
 		public Mipmap(Reapeaks rpk, RandomAccessFile rpkf, long headerStart, long dataStart) throws IOException {
 			this.rpk = rpk;
@@ -320,8 +367,7 @@ public class Reapeaks {
 		 * @param rpkf
 		 * @param headerStart
 		 * @param dataStart
-		 * @throws IOException 
-		 * @throws Exception
+		 * @throws IOException
 		 */
 		private void readMipmap(RandomAccessFile rpkf, long headerStart, long dataStart) throws IOException {
 			byte[] buf = new byte[mipmapHeaderSize];
@@ -344,18 +390,35 @@ public class Reapeaks {
 			getClass();
 		}
 
+		/**
+		 * 
+		 * @return
+		 */
 		public int getDivisionFactor() {
 			return divisionFactor;
 		}
 
+		/**
+		 * 
+		 * @return
+		 */
 		public int getCountOfPeakSamples() {
 			return countOfPeakSamples;
 		}
 
+		/**
+		 * 
+		 * @return
+		 */
 		public short[] getPeaks() {
 			return peaks;
 		}
 		
+		/**
+		 * 
+		 * @param idx
+		 * @return
+		 */
 		public short[] getPeak(int idx) {
 			short[] peak = new short[versionMultiplier * channels];
 			System.arraycopy(peaks, idx * rpk.getVersionMultiplier() * channels, peak, 0, peak.length);

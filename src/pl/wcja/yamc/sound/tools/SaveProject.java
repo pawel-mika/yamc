@@ -57,7 +57,7 @@ public class SaveProject extends ToolBarEntryPlugin {
 
 	@Override
 	public String getEntryName() {
-		return "Save proejct...";
+		return "Save project...";
 	}
 
 	@Override

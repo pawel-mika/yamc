@@ -26,6 +26,7 @@ import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
+import javax.swing.border.EtchedBorder;
 
 import pl.wcja.yamc.dsp.MainMixer;
 import pl.wcja.yamc.event.BufferMixedEvent;
@@ -58,7 +59,7 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 	
 	public MFMixerPanel(IMainFrame mf) {
 		super(mf);
-		jpMixer.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+		jpMixer.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 //		jpMixer.setBackground(Color.white);
 		jbPlay.addActionListener(new ActionListener() {
 			@Override

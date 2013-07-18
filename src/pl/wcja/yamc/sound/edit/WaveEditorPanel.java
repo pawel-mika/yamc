@@ -463,7 +463,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		double[] RMSSample = new double[audioStream.getAudioFileFormat().getFormat().getChannels()];
 		double[] tmpSample;
 		Mipmap mm = getBestMipmap();
-		double peakCount = Math.ceil((toIndex - fromIndex) / (double)mm.getDivisionFactor());
+//		double peakCount = Math.ceil((toIndex - fromIndex) / (double)mm.getDivisionFactor());
+		double peakCount = (toIndex - fromIndex) / (double)mm.getDivisionFactor();
 //		if(mm != null) {
 //			System.out.println(String.format(
 //					"samples per pixel: %s, get from %s to %s / mipmap divider: %s = %s", samplesPerPixel, 
