@@ -29,6 +29,7 @@ import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
+import pl.wcja.yamc.utils.Decibels;
 
 /**
  * 
@@ -386,7 +387,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private void paintAudioStreamRMS(Graphics g) {
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		lastWidth = getWidth();
 		lastHeight = getHeight();
 		double channelHeight = (lastHeight / channels);
@@ -403,12 +403,11 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
-			//TODO: change this to gather data from REAPEAKS!?
 			if((int)lts != (int)ltsn) {
-				if(getBestMipmap() != null) {
-					sample = getRMSMipmapSample((long)lts, (long)ltsn);
+				if(currentMipmap != null) {
+					sample = getRMSMipmapSample((long)lts, (long)ltsn);	
 				} else {
-					sample = audioStream.getRMSSample((long)lts, (long)ltsn);	
+					sample = audioStream.getRMSSample((long)lts, (long)ltsn);
 				}
 			} else {
 				sample = audioStream.getSample((long)lts);
@@ -429,7 +428,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	private void initReapeaks() {
+	private void initReapeaks() throws IOException {
 		reapeaks = new Reapeaks(audioStream);
 	}
 	
@@ -456,13 +455,11 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			loop++;
 			tmpSample = getReapeaksSample(i);
 			for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-				RMSSample[ci] += tmpSample[ci * reapeaks.getVersionMultiplier()] * tmpSample[ci * reapeaks.getVersionMultiplier()];
-				RMSSample[ci] += tmpSample[(ci  * reapeaks.getVersionMultiplier()) + 1] * tmpSample[(ci  * reapeaks.getVersionMultiplier()) + 1];
+				RMSSample[ci] += tmpSample[ci] * tmpSample[ci];
 			}
 		}
 		for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (loop * RMSSample.length));	//RMSSample length = channels count
-//			RMSSample[ci] = Decibels.linearToDecibels(RMSSample[ci]) / (toIndex - fromIndex);
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (loop * RMSSample.length ));	//RMSSample length = channels count
 		}
 		return RMSSample;
 	}
