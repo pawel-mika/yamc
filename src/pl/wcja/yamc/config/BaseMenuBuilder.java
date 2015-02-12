@@ -13,6 +13,7 @@ import pl.wcja.yamc.debug.ReapeaksLoad;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.MenuEntry;
 import pl.wcja.yamc.frame.ToolBarEntry;
+import pl.wcja.yamc.frame.tools.FollowMarker;
 import pl.wcja.yamc.frame.tools.QuitApp;
 import pl.wcja.yamc.frame.tools.ShowWaveEditor;
 import pl.wcja.yamc.sound.edit.TuneEditorGridConfigPlugin;
@@ -55,6 +56,7 @@ public class BaseMenuBuilder implements MenuBuilder {
 		addEntry(menuBar, new ReapeaksLoad(mf));
 		
 		addEntry(menuBar, new DebugConfigPlugin(mf));
+		addEntry(menuBar, new FollowMarker(mf));
 		
 		//TODO Automate menu building using config files/plugins
 	}
@@ -101,11 +103,15 @@ public class BaseMenuBuilder implements MenuBuilder {
 		if(me instanceof ToolBarEntry) {
 			Component tc = ((ToolBarEntry)me).getToolbarComponent();
 			mf.getToolbar().add(tc);//, mf.getToolbar().getComponents().length + ((ToolBarEntry)me).getOffsetModifier());
+			mf.getToolbar().invalidate();
 		}
 	}
 	
 	private JMenuItem getJMenuItem(final MenuEntry me) {
-		JMenuItem jmi = new JMenuItem(me.getEntryName());
+		JMenuItem jmi = me.getMenuItem() == null ? 
+				new JMenuItem(me.getEntryName()):
+				me.getMenuItem();
+		
 		jmi.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {

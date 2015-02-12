@@ -2,6 +2,7 @@ package pl.wcja.yamc.sound.edit;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -372,6 +373,11 @@ public class TuneEditorGrid extends JComponent
 		repaint();
 	}
 	
+	/**
+	 * 
+	 * @param timeFrom
+	 * @param timeTo
+	 */
 	public void pan(double timeFrom, double timeTo) {
 		viewFrom = timeFrom;
 		viewTo = timeTo;
@@ -380,7 +386,39 @@ public class TuneEditorGrid extends JComponent
 		rearrangeTracks();
 		repaint(0, 0, getWidth(), getHeight());
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isMarkerVisible() {
+		return markerPosition >= viewFrom && markerPosition <= viewTo;
+	}
+	
+	/**
+	 * Movie view to the time, placing this time 0.0 - 1.0 percent 
+	 * from the viewFrom at current visible time span.   
+	 * @param time
+	 * @param startOffsetPercent
+	 */
+	public void moveTo(double time, double startOffsetPercent) {
+		double tFrom = time - (getVisibleTimeSpan() * startOffsetPercent);
+		double tTo = tFrom + getVisibleTimeSpan();
+		pan(tFrom, tTo);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public double getVisibleTimeSpan() {
+		return Math.abs(viewTo - viewFrom);
+	}
 		
+	/**
+	 * 
+	 * @param tip
+	 */
 	public void setFocusedTrackItemPanel(TrackItemPanel tip) {
 		this.focusedTrackItemPanel = tip;
 		if(tip != null && tip.getWaveFile() != null) {
@@ -388,6 +426,10 @@ public class TuneEditorGrid extends JComponent
 		}
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public TrackItemPanel getFocusedTrackItemPanel() {
 		return focusedTrackItemPanel;
 	}
@@ -484,6 +526,10 @@ public class TuneEditorGrid extends JComponent
 		return null;
 	}
 	
+	/**
+	 * 
+	 * @param track
+	 */
 	private void removeTrack(Track track) {
 		for(TrackItemPanel tip : getTrackItemPanelsOn(track)) {
 			removeTrackItemPanel(tip);
@@ -1032,6 +1078,7 @@ public class TuneEditorGrid extends JComponent
 						WaveEditorPanel wep = new WaveEditorPanel();
 						try {
 							wep.setWaveFile(item.getWaveFile());
+							wep.setPreferredSize(new Dimension(400, 200));
 						} catch (UnsupportedAudioFileException | IOException e) {
 							e.printStackTrace();
 						}

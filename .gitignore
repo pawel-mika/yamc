@@ -1,7 +1,5 @@
 test
 bin/
 .settings/
-01 - Immigrant Song77102472347877957709378668964537179631.wav
-03 - The Son of Flynn28450452998043049035626515895999626969.wav
-calif_evo_jantar251510434543069299915027949087811909623.wav
-test_files/
+test_files_ignored/
+yamc.log*

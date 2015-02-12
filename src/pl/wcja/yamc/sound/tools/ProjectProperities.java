@@ -11,24 +11,30 @@ import pl.wcja.yamc.gui.ProjectProperitiesDialog;
 import pl.wcja.yamc.plugin.ToolBarEntryPlugin;
 import pl.wcja.yamc.utils.DialogUtils;
 
+/**
+ * 
+ *
+ * @author:		<a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
+ * @date:		18 lip 2013 12:17:28
+ *
+ */
 public class ProjectProperities extends ToolBarEntryPlugin {
+
+	private JButton jbProp = null;
 
 	public ProjectProperities(IMainFrame mf) {
 		super(mf);
-	}
-
-	private JButton jbProp = null;
-	
-	@Override
-	public Component getToolbarComponent() {
-		jbProp = new JButton("Properities");
-		jbProp.setAction(new AbstractAction() {
-			
+		jbProp = new JButton();
+		jbProp.setAction(new AbstractAction("Properities") {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				entrySelected();
 			}
 		});
+	}
+
+	@Override
+	public Component getToolbarComponent() {
 		return jbProp;
 	}
 

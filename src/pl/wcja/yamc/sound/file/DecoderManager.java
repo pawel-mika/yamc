@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import pl.wcja.yamc.event.ProgressListener;
+import pl.wcja.yamc.file.MP3Stream;
 
 /**
  * 
@@ -29,6 +30,7 @@ public class DecoderManager {
 	public File decode(final File in, final File out, final ProgressListener pl) throws Exception {
 		for (Decoder d : registeredDecoders) {
 			if (d.isAcceptableFiletype(in)) {
+//				MP3Stream TEST = new MP3Stream(in);
 				return d.decode(in, out, pl);
 			}
 		}
