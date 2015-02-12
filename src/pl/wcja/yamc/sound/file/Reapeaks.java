@@ -56,11 +56,15 @@ public class Reapeaks {
 	 * 
 	 */
 	public Reapeaks(AbstractAudioStream aas) {
-		String name = aas.getFile().getName().split(".wav")[0];
+		String name = aas.getFile().getAbsolutePath();//.split(".wav")[0];
 		name += ".reapeaks";
 		this.rpkf = new File(name);
 		try {
-			generateReapeaks(aas);
+			if(rpkf.exists()) {
+				this.readReapeaksFile();
+			} else {
+				generateReapeaks(aas);
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -173,7 +177,7 @@ public class Reapeaks {
 					divisionFactor :
 					frameLength - i;	
 			byte[] piece = aas.getRawData(i, toGet);
-			ShortBuffer shortBuffer = ByteBuffer.wrap(piece).asShortBuffer();
+			ShortBuffer shortBuffer = ByteBuffer.wrap(piece).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
 			mipmapIdx = (i / divisionFactor) * channels * versionMultiplier;
 			//System.out.println(String.format("frameLenght: %s, i: %s, divFactor: %s, data.length: %s, mipmapidx: %s", frameLength, i, divisionFactor, data.length, mipmapIdx));
 			for(int j = 0; j < shortBuffer.limit(); j += channels) {
@@ -227,7 +231,13 @@ public class Reapeaks {
 	}
 	
 	public Mipmap getBestMipmapFor(double samplesPerPixel) {
-		return mipmaps.get(mipmaps.size() - 1);//temporaty for tests!
+		Mipmap best = null;
+		for(Mipmap mm : mipmaps) {
+			if(samplesPerPixel >= mm.divisionFactor) {
+				best = mm;
+			}
+		}
+		return best;
 	}
 
 	/**

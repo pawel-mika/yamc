@@ -287,4 +287,9 @@ public class TrackItemPanel extends WaveEditorPanel implements DropTargetListene
 			editor.mouseWheelMoved(e);	
 		}
 	}
+	
+	@Override 
+	public synchronized void paint(java.awt.Graphics g) {
+		super.paint(g);
+	};
 }

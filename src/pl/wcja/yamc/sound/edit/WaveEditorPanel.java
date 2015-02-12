@@ -32,6 +32,7 @@ import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
 import pl.wcja.yamc.sound.file.YamcPeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
+import pl.wcja.yamc.utils.Decibels;
 import pl.wcja.yamc.utils.SoundUtils;
 
 import com.sun.media.sound.WaveFileReader;
@@ -71,7 +72,8 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private Color colorGrid = Color.lightGray;
 	private Color colorSelection = Color.darkGray;
 	private Color colorText = new Color(128,64,64);
-	
+	private Mipmap currentMipmap = null;
+
 	private List<WaveEditorPanelListener> waveformPanelListeners = new LinkedList<WaveEditorPanelListener>();
 
 	private enum SELECTION_EDIT_MODE {
@@ -154,6 +156,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		recalculateSamplesPerPixel();
 		
 		initReapeaks();
+		currentMipmap = reapeaks.getBestMipmapFor(samplesPerPixel);
 		
 		//all ok - start listeners
 		addMouseListener(this);
@@ -244,28 +247,43 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		return getBytes((int)viewFromFrame, (int)(viewToFrame - viewFromFrame));
 	}	
 	
+	private void selectBestMipmap() {
+		Mipmap mm = reapeaks.getBestMipmapFor(samplesPerPixel);
+		if(currentMipmap != mm) {
+			if(mm != null) {
+				System.out.println(String.format(
+						"%s switched mipmap to [count: %s division factor: %s] at %s", 
+						audioStream.getFile().getName(), mm.getCountOfPeakSamples(), mm.getDivisionFactor(), samplesPerPixel));	
+			} else {
+				System.out.println(String.format("%s switched mipmap to null at SPP: %s", audioStream.getFile().getName(), samplesPerPixel));
+			}
+			currentMipmap = mm;
+		}
+	}
+	
 	/**
 	 * Get a sample from reapeak mipmap
+	 * If v1.1: <n * number of channels * 2> 2 byte integers: the peak data
+       The peak data is a collection of 2 byte signed sample pairs (-32768 to 
+       32767), maximum and minimum values for this interval. 
+        Example: stereo samples (MX=max, MN=min, ???? = 2 bytes):
+          L0MX L0MN R0MX R0MN L1MX L1MN R1MX R1MN ...
+        Example: mono samples (MX=max, MN=min):
+          L0MX L0MN L1MX L1MN L2MX L2MN ...
 	 * @param sampleNo
 	 * @return
 	 */
 	private double[] getReapeaksSample(double sampleNo) {
-		Mipmap mm = getBestMipmap();
 		double[] sample = new double[reapeaks.getChannels() * reapeaks.getVersionMultiplier()];
 		//translate sampleNo to reapeak mipmap sample number
-		int rsn = (int)(sampleNo / mm.getDivisionFactor());
-		short[] peak = mm.getPeak(rsn);
+		int rsn = (int)(sampleNo / currentMipmap.getDivisionFactor());
+		short[] peak = currentMipmap.getPeak(rsn);
 		for(int i = 0; i < peak.length; i++) {
 			sample[i] = peak[i];
 		}
 		return sample;
 	}
-	
-	private Mipmap getBestMipmap() {
-		System.out.println("samples per pixel: " + samplesPerPixel);
-		return reapeaks.getMipmaps().get(reapeaks.getMipmaps().size() - 1);
-	}
-	
+
 	/* (non-Javadoc)
 	 * @see pl.wcja.sound.gui.WaveEditor#setMarkerLocation(double)
 	 */
@@ -347,6 +365,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		//wave i jego pierdolki
 		if(audioStream != null && audioStream.getFile().length() > 0) {
 			recalculateSamplesPerPixel();
+			selectBestMipmap();	
 			if(g instanceof Graphics2D) {
 				((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
@@ -361,8 +380,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			}
 			//sample
 			paintAudioStreamRMS(g);
-			//new way to paint sample 
-//			paintWaveform(g);
 			//marker
 			g.setColor(colorMarker);
 			g.drawLine((int)sampleToPixel(markerLocationSample), 0, (int)sampleToPixel(markerLocationSample), getHeight());
@@ -454,8 +471,15 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		for(int x = from; x < to; x++) {
 			double lts = pixelToSample(x), value;
 			double ltsn = pixelToSample(x+1), valuen;
+			//TODO: change this to gather data from REAPEAKS!?
 			if((int)lts != (int)ltsn) {
-				sample = audioStream.getRMSSample((long)lts, (long)ltsn);	
+				if(currentMipmap != null) {
+					sample = getRMSMipmapSample((long)lts, (long)ltsn);	
+				} else {
+//					sample = audioStream.getSample((long)lts);
+//					sample = getRMSSample((long)lts);
+					sample = audioStream.getRMSSample((long)lts, (long)ltsn);
+				}
 			} else {
 				sample = audioStream.getSample((long)lts);
 			}			
@@ -471,54 +495,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 				value = ((sample[channel] * channelHeight) / sampleResolution);
 				g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
 				g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
-
 			}
-		}
-	}
-	
-	/**
-	 * TODO - implement it.. but how?:P
-	 * Paint the waveform using pre-calculated data from reapacks or 
-	 * real data depending of samplesPerPixel ratio.
-	 * @param g
-	 */
-	private void paintWaveform(Graphics g) {
-		lastWidth = getWidth();
-		lastHeight = getHeight();
-		double channelHeight = (lastHeight / channels);
-		Rectangle b = getBounds();
-		//in case of this component bounds extends parent bounds we're
-		//going to draw only the visible region to speed up drawing!
-		Rectangle clipBounds = g.getClipBounds();
-		int from = (int)clipBounds.getX();
-		int to = from + (int)clipBounds.getWidth();
-		
-		if(samplesPerPixel > 128) {
-			//draw using accumulated data
-			for(int x = from; x < to; x++) {
-				double lts = pixelToSample(x), valuemin, valuemax;
-				double[] sample = getReapeaksSample((long)lts);
-				for(int channel = 0; channel < channels; channel++) {
-					double chnX = (channel * channelHeight) + (channelHeight / 2);
-					g.setColor(colorGrid);
-					g.drawLine(x, (int)chnX, x, (int)chnX);
-					if(selection != null && lts >= selection.getSelectionStart() && lts <= selection.getSelectionEnd()) {
-						g.setColor(colorBackground);
-					} else {
-						g.setColor(colorForeground);
-					}
-					valuemin = ((sample[channel * 2] * channelHeight) / sampleResolution);
-					valuemax = ((sample[channel * 2 + 1] * channelHeight) / sampleResolution);
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX - value));
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX + value));
-					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemax));
-//					g.drawLine(x, (int)(chnX), x, (int)(chnX + valuemin));
-					
-				}
-			}			
-		} else {
-			//draw from real data
-			paintAudioStream(g);
 		}
 	}
 	
@@ -526,18 +503,13 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		reapeaks = new Reapeaks(audioStream);
 	}
 	
-	private double[] getMipmapSample(long fromFrame, long toFrame) {
-		long visibleFrames = toFrame - fromFrame;
-		System.out.println(String.format("from:%s, to:%s, visibleFrames: %s", fromFrame, toFrame, visibleFrames));
-		int multiplier = reapeaks.getChannels() * reapeaks.getVersionMultiplier();
-		double[] mmSamples = new double[(int)visibleFrames * multiplier];
-//		short[] buffer = new short[(int)visibleFrames * multiplier];
-		for(long i = fromFrame; i < toFrame; i++) {
-//			System.arraycopy(m.getPeak((int)i), 0, buffer,(int)(i - fromFrame) * multiplier, m.getPeak((int)i).length);
-			System.arraycopy(getReapeaksSample(i), 0, mmSamples, (int)(i - fromFrame) * multiplier, getReapeaksSample(i).length);
+	private double[] getRMSSample(long index) {
+		double[] RMSSample = audioStream.getSample(index);
+		for(int ci = 0; ci < RMSSample.length; ci++) {
+			RMSSample[ci] = RMSSample[ci] * RMSSample[ci];
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / RMSSample.length);
 		}
-//		SoundUtils.
-		return mmSamples;
+		return RMSSample;
 	}
 	
 	/**
@@ -549,17 +521,17 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	public double[] getRMSMipmapSample(long fromIndex, long toIndex) {
 		double[] RMSSample = new double[audioStream.getAudioFileFormat().getFormat().getChannels()];
 		double[] tmpSample;
-		Mipmap mm = getBestMipmap();
-//		int fromReapeakSample = (int)(fromIndex / mm.getDivisionFactor());
-//		int toReapeakSample = (int)(toIndex / mm.getDivisionFactor());
-		for(long i = fromIndex; i < toIndex; i+=mm.getDivisionFactor()) {
+		int loop = 0;
+		for(long i = fromIndex; i < toIndex; i+= currentMipmap.getDivisionFactor()) {
+			loop++;
 			tmpSample = getReapeaksSample(i);
 			for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
 				RMSSample[ci] += tmpSample[ci] * tmpSample[ci];
 			}
 		}
 		for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-			RMSSample[ci] = Math.sqrt(RMSSample[ci] / ( mm.getDivisionFactor()));
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (loop * RMSSample.length));
+//			RMSSample[ci] = Decibels.linearToDecibels(RMSSample[ci]) / (toIndex - fromIndex);
 		}
 		return RMSSample;
 	}

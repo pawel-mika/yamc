@@ -43,6 +43,9 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 	private double oneSecDraws = 0, avgOneSecFps = 0, targetOneSecFps = 25;
 	private long lastFpsCalcTime = 0;
 	private Image spectrumImage = null;
+	
+	private Color C_GRID = new Color(224,224,224);
+	private Color C_GRID_LEGEND = Color.LIGHT_GRAY;
 
 	public enum ViewMode {
 		LINEAR("Linear", 0),
@@ -201,12 +204,16 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 			int linedB = (int)(i  * scaley);
 			y = linedB;
 			int stringWidth = fm.stringWidth(sdB);
-			g.setColor(Color.gray);
+			g.setColor(C_GRID_LEGEND);
 			g.drawString(sdB, getWidth() - stringWidth, (int)(y - fm.getLineMetrics(sdB, g).getStrikethroughOffset()));
-			g.setColor(Color.lightGray);
+			g.setColor(C_GRID);
 			g.drawLine(0, y, getWidth() - stringWidth - 2, y);
 			dbLabelMargin = dbLabelMargin < stringWidth ? stringWidth : dbLabelMargin;
 		}
+		//paint Hz lines...
+//		for(int x = 0; x <= getWidth() - dbLabelMargin; x += 10) {
+//			
+//		}
 	}
 	
 	/**
