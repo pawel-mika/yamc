@@ -3,3 +3,6 @@ bin/
 .settings/
 test_files_ignored/
 yamc.log*
+*.wav
+*.reapeaks
+*.yamc

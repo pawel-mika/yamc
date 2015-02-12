@@ -29,13 +29,6 @@ import pl.wcja.yamc.file.WaveStream;
 import pl.wcja.yamc.jcommon.Unit;
 import pl.wcja.yamc.sound.file.Reapeaks;
 import pl.wcja.yamc.sound.file.Reapeaks.Mipmap;
-<<<<<<< HEAD
-import pl.wcja.yamc.utils.Decibels;
-import pl.wcja.yamc.utils.SoundUtils;
-
-import com.sun.media.sound.WaveFileReader;
-=======
->>>>>>> effb414d35467972abcd8a906b4734e980e13b9c
 
 /**
  * 
