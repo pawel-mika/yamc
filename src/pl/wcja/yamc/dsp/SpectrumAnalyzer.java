@@ -13,6 +13,7 @@ import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
 import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.event.PlaybackStatusListener;
+import pl.wcja.yamc.event.SourceMixerChangedEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerEvent;
 import pl.wcja.yamc.event.SpectrumAnalyzerListener;
 import pl.wcja.yamc.frame.IMainFrame;
@@ -262,5 +263,10 @@ public class SpectrumAnalyzer implements PlaybackStatusListener, MixerListener {
 			fireSpectrumEvent(new SpectrumAnalyzerEvent(this, fftBuffers, barFrequencyWidth));
 			mixedBuffer = new byte[0];
 		}
+	}
+
+	@Override
+	public void sourceMixerChanged(SourceMixerChangedEvent e) {
+		
 	}
 }

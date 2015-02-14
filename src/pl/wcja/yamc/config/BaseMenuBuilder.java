@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.Box;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -64,7 +66,7 @@ public class BaseMenuBuilder implements MenuBuilder {
 	private void addEntry(JMenuBar mb, MenuEntry me) {
 		for(int i = 0; i < mb.getMenuCount(); i++) {
 			JMenu menu = mb.getMenu(i);
-			if(me.getMenu().equalsIgnoreCase(menu.getText())) {
+			if(menu != null && me.getMenu().equalsIgnoreCase(menu.getText())) {
 				if(me.getSubmenu() != null && !me.getSubmenu().isEmpty()) {
 					for(Component c : menu.getMenuComponents()) {
 						if(c instanceof JMenu) {

@@ -22,6 +22,7 @@ import pl.wcja.yamc.debug.DebugConfig;
 import pl.wcja.yamc.event.BufferMixedEvent;
 import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
+import pl.wcja.yamc.event.SourceMixerChangedEvent;
 import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.frame.IMainFrame;
@@ -48,6 +49,7 @@ public class MainMixer {
 	private Thread playerThread = null;
 	private PlayerRunnable playerRunnable = null;
 
+	protected PlaybackEvent.State state = State.STOP;
 	protected Vector<Mixer> sourceMixers = new Vector<Mixer>();
 	protected Vector<Mixer> targetMixers = new Vector<Mixer>(); 
 	private Mixer sourceMixer = null;
@@ -63,7 +65,7 @@ public class MainMixer {
 	private List<PlaybackStatusListener> playbackStatusListeners = new LinkedList<PlaybackStatusListener>();
 	private List<MixerListener> mixerListeners = new LinkedList<MixerListener>();
 	
-	private TrackItem emptyTrackItem = new TrackItem(new Track("fake empty track"), 0, 0);
+	private TrackItem emptyTrackItem = new TrackItem(new Track("Empty track"), 0, 0);
 	
 	/**
 	 * 
@@ -99,7 +101,6 @@ public class MainMixer {
 	}
 		
 	public void play() {
-		stop();
 		if(!defaultDataLine.isOpen()) {
 			playerRunnable = new PlayerRunnable();
 			playerThread = new Thread(playerRunnable);
@@ -107,6 +108,19 @@ public class MainMixer {
 			playerThread.start();
 		}
 		firePlaybackEvent(new PlaybackEvent(this, State.PLAY));
+		fireSourceMixerChangedEvent(new SourceMixerChangedEvent(this, sourceMixer, defaultDataLine));
+	}
+	
+	public void pause() {
+		if(playerThread != null && playerRunnable != null && !playerRunnable.isInterrupted()) {
+			playerRunnable.interrupt();
+			playerThread.interrupt();
+			defaultDataLine.drain();
+			defaultDataLine.stop();
+			defaultDataLine.close();
+		}
+		firePlaybackEvent(new PlaybackEvent(this, State.PAUSE));
+		fireSourceMixerChangedEvent(new SourceMixerChangedEvent(this, sourceMixer, defaultDataLine));
 	}
 	
 	public void stop() {
@@ -125,6 +139,7 @@ public class MainMixer {
 			mf.getTuneEditor().setMarkerLocation(0);
 		}
 		firePlaybackEvent(new PlaybackEvent(this, State.STOP));
+		fireSourceMixerChangedEvent(new SourceMixerChangedEvent(this, sourceMixer, defaultDataLine));
 	}
 	
 	public double samplesToTime(double samples) {
@@ -143,7 +158,7 @@ public class MainMixer {
 		return mixAudioFormat;
 	}
 	
-	public Mixer getSource() {
+	public Mixer getSourceMixer() {
 		return sourceMixer;
 	}
 	
@@ -151,9 +166,14 @@ public class MainMixer {
 		return sourceMixers;
 	}
 	
+	public SourceDataLine getSourceDataLine() {
+		return defaultDataLine;
+	}
+	
 	public void setSourceMixer(Mixer sm) {
 		this.sourceMixer = sm;
 		try {
+			pause();
 			if(defaultDataLine != null && defaultDataLine.isOpen()) {
 				defaultDataLine.close();
 			}
@@ -163,6 +183,7 @@ public class MainMixer {
 			sourceMixer.open();
 			defaultDataLine = (SourceDataLine) sourceMixer.getLine(sourceMixer.getSourceLineInfo()[0]);
 			mixerMaxLines = sourceMixer.getMaxLines(defaultDataLine.getLineInfo());
+			fireSourceMixerChangedEvent(new SourceMixerChangedEvent(this, this.sourceMixer, defaultDataLine));
 		} catch (LineUnavailableException e) {
 			e.printStackTrace();
 		}
@@ -368,7 +389,7 @@ public class MainMixer {
 		@Override
 		public void run() {
 			try {
-				defaultDataLine.open(new AudioFormat(outSamplerate, outBitrate, outChannels, true, false), mixBufferSampleLen * 32);
+				defaultDataLine.open(new AudioFormat(outSamplerate, outBitrate, outChannels, true, false), mixBufferSampleLen * 8);
 			} catch (LineUnavailableException e) {
 				e.printStackTrace();
 			}
@@ -389,7 +410,6 @@ public class MainMixer {
 							fetched.size(), l, l / 1000, (double)l / 1000000));
 				}
 				fireMixerEvent(new BufferMixedEvent(this, mixAudioFormat, test));
-
 				//
 				defaultDataLine.write(test, 0, test.length);
 				defaultDataLine.start();
@@ -428,6 +448,7 @@ public class MainMixer {
 			for(PlaybackStatusListener l : playbackStatusListeners) {
 				l.playbackStatusChanged(e);
 			}
+			state = e.getState();
 		}
 	}
 	
@@ -447,6 +468,14 @@ public class MainMixer {
 		synchronized (mixerListeners) {
 			for(MixerListener l : mixerListeners) {
 				l.bufferMixed(e);
+			}
+		}
+	}
+	
+	private void fireSourceMixerChangedEvent(SourceMixerChangedEvent e) {
+		synchronized (mixerListeners) {
+			for(MixerListener l : mixerListeners) {
+				l.sourceMixerChanged(e);
 			}
 		}
 	}

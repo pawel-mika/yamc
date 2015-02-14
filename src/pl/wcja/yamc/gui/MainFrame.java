@@ -102,6 +102,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		mfToolBar.add(mfMixer);
 		
 		new BaseMenuBuilder(this).build(mfMenuBar);
+		mfMenuBar.initMixerInfo();
 		
 		spectrumAnalyzer = new SpectrumAnalyzer(this);
 		

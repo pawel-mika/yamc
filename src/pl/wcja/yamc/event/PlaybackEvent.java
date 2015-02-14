@@ -16,7 +16,8 @@ public class PlaybackEvent extends EventObject {
 		PLAY("Play", 1),
 		PAUSE("Pause", 2),
 		FFW("Fast forward", 3),
-		REW("Rewind", 4);
+		REW("Rewind", 4),
+		LOOP("LOOP", 5);		
 		
 		private String name = "";
 		private int value = 0;

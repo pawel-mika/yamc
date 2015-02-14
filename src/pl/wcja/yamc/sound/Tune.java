@@ -23,6 +23,7 @@ public class Tune implements Serializable {
 	private double lenght = 0;
 	
 	private ArrayList<Track> tracks = new ArrayList<Track>();
+	private Loop loop = null;
 
 	public Tune(double bpm, String tuneName) {
 		this.BPM = bpm;
@@ -134,4 +135,13 @@ public class Tune implements Serializable {
 			lenght = timeEnd - timeStart;
 		}
 	}
+
+	public Loop getLoop() {
+		return loop;
+	}
+
+	public void setLoop(Loop loop) {
+		this.loop = loop;
+	}
+		
 }

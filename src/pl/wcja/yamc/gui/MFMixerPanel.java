@@ -1,6 +1,5 @@
 package pl.wcja.yamc.gui;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -8,13 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -29,27 +22,20 @@ import javax.swing.JToggleButton;
 import javax.swing.border.EtchedBorder;
 
 import pl.wcja.yamc.dsp.MainMixer;
-import pl.wcja.yamc.event.BufferMixedEvent;
-import pl.wcja.yamc.event.MixerListener;
 import pl.wcja.yamc.event.PlaybackEvent;
 import pl.wcja.yamc.event.PlaybackEvent.State;
 import pl.wcja.yamc.event.PlaybackStatusListener;
 import pl.wcja.yamc.frame.Configurable;
 import pl.wcja.yamc.frame.IMainFrame;
 import pl.wcja.yamc.frame.ToolBarEntry;
-import pl.wcja.yamc.sound.Track;
-import pl.wcja.yamc.sound.TrackItem;
-import pl.wcja.yamc.sound.Tune;
-import pl.wcja.yamc.sound.edit.TrackItemPanel;
 import pl.wcja.yamc.utils.DialogUtils;
-import pl.wcja.yamc.utils.SoundUtils;
 
 /**
  * 
  * @author <a href="mailto:ketonal80@gmail.com">Pablo</a>, wcja.pl
  *
  */
-public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurable {
+public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurable, PlaybackStatusListener {
 //	private Map<TrackItem, SourceDataLine> trackItemLines = new HashMap<TrackItem, SourceDataLine>();
 	
 	private JPanel jpMixer = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -60,11 +46,14 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 	public MFMixerPanel(IMainFrame mf) {
 		super(mf);
 		jpMixer.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
-//		jpMixer.setBackground(Color.white);
 		jbPlay.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				play();	
+				if(state == State.STOP || state == State.PAUSE) {
+					play();	
+				} else {
+					pause();
+				}
 			}
 		});
 		jbStop.addActionListener(new ActionListener() {
@@ -76,6 +65,7 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 		jpMixer.add(jbPlay);
 		jpMixer.add(jbStop);
 		jpMixer.add(jtbLoop);
+		addPlaybackStatusListener(this);
 	}
 
 	@Override
@@ -138,7 +128,7 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 		JComboBox jcbSource = new JComboBox(sourceMixers);
 		
 //		JComboBox
-		jcbSource.setSelectedItem(getSource());
+		jcbSource.setSelectedItem(getSourceMixer());
 		jd.add(jcbSource, gbc);
 		gbc.gridy+=1;
 		
@@ -194,6 +184,21 @@ public class MFMixerPanel extends MainMixer implements ToolBarEntry, Configurabl
 		jd.pack();
 		DialogUtils.centerScreenDialog(jd);
 		jd.setVisible(true);
+	}
+
+	@Override
+	public void playbackStatusChanged(PlaybackEvent e) {
+		switch(e.getState()) {
+			case PLAY:
+				jbPlay.setText("Pause");
+				break;
+			case PAUSE:
+				jbPlay.setText("Play");
+				break;
+			default:
+				jbPlay.setText("Play");
+				break;
+		}
 	}
 	
 }

@@ -48,6 +48,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	protected Reapeaks reapeaks = null;
 	
 	protected int channels = 0, frameSize = 0, bytesPerChannel = 0, sampleResolution = 0;
+	protected int infoTxtMarginLeft = 2;
 	protected long totalSamples = 0;
 	protected double visibleStart = 0, visibleEnd = 0;
 	protected double viewFromFrame = 0, viewToFrame = 0;
@@ -245,7 +246,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 		if(currentMipmap != mm) {
 			if(mm != null) {
 				System.out.println(String.format(
-						"%s switched mipmap to [count: %s division factor: %s] at %s", 
+						"%s switched mipmap to [count: %s, division factor: %s] at %s", 
 						audioStream.getFile().getName(), mm.getCountOfPeakSamples(), mm.getDivisionFactor(), samplesPerPixel));	
 			} else {
 				System.out.println(String.format("%s switched mipmap to null at SPP: %s", audioStream.getFile().getName(), samplesPerPixel));
@@ -275,15 +276,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			sample[i] = peak[i];
 		}
 		return sample;
-	}
-
-	/**
-	 * 
-	 * @return
-	 */
-	private Mipmap getBestMipmap() {
-		Mipmap m = reapeaks.getBestMipmapFor(samplesPerPixel);
-		return m;
 	}
 	
 	@Override
@@ -334,11 +326,15 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	 */
 	private void drawInfo(Graphics g) {
 		String txt = "";
+		int y = 0;
 		g.setColor(colorText);
 		FontMetrics fm = g.getFontMetrics();
-		g.drawString("" + audioStream.getFile().getName(), 2, fm.getHeight());
-		txt = String.format("SamplePerPixel: %1.4f", samplesPerPixel);
-		g.drawString(txt, (int)(getWidth() - fm.getStringBounds(txt, g).getWidth() - 2), getHeight() - 2);
+		y = fm.getHeight();
+		g.drawString("" + audioStream.getFile().getName(), infoTxtMarginLeft, y);
+		y += fm.getHeight();
+		txt = String.format("Smpl/Px: %1.4f", samplesPerPixel);
+//		g.drawString(txt, (int)(getWidth() - fm.getStringBounds(txt, g).getWidth() - 2), getHeight() - 2);
+		g.drawString(txt, infoTxtMarginLeft, y);
 	}
 
 	/**
@@ -431,15 +427,6 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 	private void initReapeaks() throws IOException {
 		reapeaks = new Reapeaks(audioStream);
 	}
-	
-	private double[] getRMSSample(long index) {
-		double[] RMSSample = audioStream.getSample(index);
-		for(int ci = 0; ci < RMSSample.length; ci++) {
-			RMSSample[ci] = RMSSample[ci] * RMSSample[ci];
-			RMSSample[ci] = Math.sqrt(RMSSample[ci] / RMSSample.length);
-		}
-		return RMSSample;
-	}
 
 	/**
 	 * Get a RMS samples from a generated mipmap 
@@ -459,7 +446,7 @@ public class WaveEditorPanel extends JComponent implements MouseListener, MouseM
 			}
 		}
 		for(int ci = 0; ci < audioStream.getAudioFileFormat().getFormat().getChannels(); ci++) {
-			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (loop * RMSSample.length ));	//RMSSample length = channels count
+			RMSSample[ci] = Math.sqrt(RMSSample[ci] / (loop * RMSSample.length));	//RMSSample length = channels count
 		}
 		return RMSSample;
 	}

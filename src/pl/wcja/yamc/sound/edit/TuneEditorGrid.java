@@ -353,8 +353,8 @@ public class TuneEditorGrid extends JComponent
 			double oldPx = secondToPixelAbsolute(this.markerPosition);
 			this.markerPosition = markerPosition;
 			if(newPx != oldPx) {
-				repaint((int)oldPx - 2, 0, 3, getHeight());
-				repaint((int)newPx - 2, 0, 3, getHeight());
+				repaint((int)oldPx, 0, 1, getHeight());
+				repaint((int)newPx, 0, 1, getHeight());
 			}
 		}
 	}
@@ -966,7 +966,7 @@ public class TuneEditorGrid extends JComponent
 		double left = viewFrom - ((markerPosition  - viewFrom) * (0.1 * v));
 		double right = viewTo + ((viewTo - markerPosition) * (0.1 * v));
 		//wyswietlamy max. powiekszenie 0.25sek lub 4096 sek
-		if(Math.abs(left - right) >= 0.25 && Math.abs(left - right) <= (1024 * 4)) {
+		if(Math.abs(left - right) >= 0.1 && Math.abs(left - right) <= (1024 * 4)) {
 			recalculateRatios();
 			pan(left, right);
 		}
