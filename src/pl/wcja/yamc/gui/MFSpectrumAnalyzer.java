@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
 import javax.swing.AbstractAction;
+import javax.swing.JCheckBox;
 import javax.swing.JPopupMenu;
 
 import org.apache.log4j.Logger;
@@ -127,13 +128,12 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 				fftViewMode = ViewMode.LOGARITHMIC;
 			}
 		});
-		popupMenu.add(new AbstractAction("Logarithmic type 2") {
+		popupMenu.add(new AbstractAction("1 channel") {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				fftViewMode = ViewMode.LOGARITHMIC_2;
+				
 			}
 		});
-//		popupMenu.addPopupMenuListener(this);
 	}	
 	
 	
@@ -370,21 +370,23 @@ public class MFSpectrumAnalyzer extends MFPanel implements SpectrumAnalyzerListe
 
 	@Override
 	public void spectrumCalculated(final SpectrumAnalyzerEvent e) {
-		fftSize = e.getChannelFFTs()[0].length;
-		fftPerChannelBuffer = e.getChannelFFTs();
-		bandWidth = e.getBarFrequencyWidth();
-		//calculate sum only if we really need it - save some time and CPU power;)
-		if(drawType == DrawType.SUM) {	
-			double[] sum = new double[e.getChannelFFTs()[0].length];
-			int total = e.getChannelFFTs().length;
-			for(int i = 0; i < total; i++) {
-				for(int j = 0; j < e.getChannelFFTs()[i].length; j++) {
-					sum[j] += (e.getChannelFFTs()[i][j] / total);
+		synchronized(e.getChannelFFTs()) {
+			fftSize = e.getChannelFFTs()[0].length;
+			fftPerChannelBuffer = e.getChannelFFTs();
+			bandWidth = e.getBarFrequencyWidth();
+			//calculate sum only if we really need it - save some time and CPU power;)
+			if(drawType == DrawType.SUM) {	
+				double[] sum = new double[e.getChannelFFTs()[0].length];
+				int total = e.getChannelFFTs().length;
+				for(int i = 0; i < total; i++) {
+					for(int j = 0; j < e.getChannelFFTs()[i].length; j++) {
+						sum[j] += (e.getChannelFFTs()[i][j] / total);
+					}
 				}
-			}
-			fftSumBuffer = sum;
-		} else if(drawType == DrawType.PER_CHANNEL) {
-			fftSumBuffer = e.getChannelFFTs()[0];
+				fftSumBuffer = sum;
+			} else if(drawType == DrawType.PER_CHANNEL) {
+				fftSumBuffer = e.getChannelFFTs()[0];
+			}	
 		}
 		repaint();		
 	}

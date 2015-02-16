@@ -11,11 +11,13 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JSplitPane;
 import javax.swing.WindowConstants;
+import javax.swing.border.EtchedBorder;
 
 import pl.wcja.yamc.config.BaseMenuBuilder;
 import pl.wcja.yamc.db.Database;
@@ -109,6 +111,7 @@ public class MainFrame extends JFrame implements IMainFrame, WindowListener, Wav
 		ChannelPowerMeter cp = new ChannelPowerMeter(this);
 		cp.setPreferredSize(new Dimension(256,32));
 		cp.setBackground(Color.white);
+		cp.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 		mfToolBar.add(cp);
 		
 		mfUndoManager = new MFUndoManager(this);		

@@ -25,7 +25,7 @@ public class SoundUtils {
 	public static byte[] mixdownBuffers(AudioFormat format, byte[][] buffers) {
 		//allocate output buffer of proper size
 		int channelSize = format.getFrameSize() / format.getChannels();
-		int sampleMaxValue = (int)(Math.pow(2, format.getSampleSizeInBits()));
+		int sampleMaxValue = (int)(Math.pow(2, format.getSampleSizeInBits())) / 2;
 		int bufferIndex = 0;
 		byte[] sample = new byte[channelSize];
 		byte[] outBuffer = new byte[buffers[0].length];

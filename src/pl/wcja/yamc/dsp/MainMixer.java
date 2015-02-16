@@ -389,7 +389,7 @@ public class MainMixer {
 		@Override
 		public void run() {
 			try {
-				defaultDataLine.open(new AudioFormat(outSamplerate, outBitrate, outChannels, true, false), mixBufferSampleLen * 8);
+				defaultDataLine.open(new AudioFormat(outSamplerate, outBitrate, outChannels, true, false), mixBufferSampleLen * 16);
 			} catch (LineUnavailableException e) {
 				e.printStackTrace();
 			}
