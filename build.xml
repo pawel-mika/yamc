@@ -8,14 +8,15 @@
 	<property environment="env" />
 	<property name="ECLIPSE_HOME" value="../../Dev/eclipse-SDK-3.7" />
 	<property name="debuglevel" value="source,lines,vars" />
-	<property name="target" value="1.6" />
-	<property name="source" value="1.6" />
+	<property name="target" value="1.7" />
+	<property name="source" value="1.7" />
 	<property name="output" value="dist" />
+	<property name="ant.project.name" value="yamc" />
 
 	<path id="yamc.classpath">
 		<pathelement location="bin" />
 		<pathelement location="lib/jl1.0.1.jar" />
-		<pathelement location="lib/mp3spi1.9.4.jar" />
+		<pathelement location="lib/mp3spi1.9.5.jar" />
 		<pathelement location="lib/tritonus_share.jar" />
 		<pathelement location="lib/jtransforms-2.4.jar" />
 		<pathelement location="lib/jtransforms-2.4-doc.zip" />
